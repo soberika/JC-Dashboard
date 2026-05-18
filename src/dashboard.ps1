@@ -401,7 +401,7 @@ function Show-SettingsDialog {
     function S-ClearForm {
         $sTxtNam.Text       = ""
         $sTxtPth.Text       = ""
-        $sTxtIco.Text       = "🔧"
+        $sTxtIco.Text       = ""
         $sTxtDsc.Text       = ""
         $sCmbTyp.SelectedIndex = 0
         $Script:dlgSelIdx   = -1
@@ -436,8 +436,8 @@ function Show-SettingsDialog {
         $i = $Script:dlgSelIdx
         if ($i -lt 0) { return }
         $res = [System.Windows.MessageBox]::Show(
-            "Tool '$($Script:dlgTools[$i].name)' wirklich l&#246;schen?",
-            "L&#246;schen",
+            "Tool '$($Script:dlgTools[$i].name)' wirklich loeschen?",
+            "Loeschen",
             [System.Windows.MessageBoxButton]::YesNo,
             [System.Windows.MessageBoxImage]::Question
         )
@@ -463,7 +463,7 @@ function Show-SettingsDialog {
             id          = $id
             name        = $sTxtNam.Text.Trim()
             type        = $type
-            icon        = if ($sTxtIco.Text.Trim()) { $sTxtIco.Text.Trim() } else { "🔧" }
+            icon        = if ($sTxtIco.Text.Trim()) { $sTxtIco.Text.Trim() } else { "?" }
             description = $sTxtDsc.Text.Trim()
         }
         if ($type -eq "web") {
