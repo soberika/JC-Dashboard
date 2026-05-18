@@ -12,8 +12,18 @@ $ToolsFile = Join-Path $ScriptDir "tools.json"
 
 function Load-Tools {
     if (-not (Test-Path $ToolsFile)) { return , @() }
-    $json = Get-Content $ToolsFile -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($json.tools) { return , $json.tools } else { return , @() }
+    try {
+        $json = Get-Content $ToolsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($json.tools) { return , $json.tools } else { return , @() }
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "tools.json konnte nicht geladen werden.`n`nHinweis: Windows-Pfade muessen in JSON doppelte Backslashes verwenden (C:\\Pfad\\Datei).`n`nFehler: $_",
+            "Konfigurationsfehler",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Warning
+        ) | Out-Null
+        return , @()
+    }
 }
 
 function Save-Tools {

@@ -4,7 +4,7 @@
       "id": "zahllauf",
       "name": "Zahllauf",
       "type": "powershell",
-      "path": "C:\temp\__\zahllauf-automatisierung\src\taeglicherZahllauf.hta",
+      "path": "C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta",
       "icon": "⚙️",
       "description": "Täglicher Zahllauf"
     },
