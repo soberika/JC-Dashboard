@@ -3,7 +3,7 @@ Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$ScriptDir = $PSScriptRoot
 $ToolsFile = Join-Path $ScriptDir "tools.json"
 
 # ---------------------------------------------------------------------------

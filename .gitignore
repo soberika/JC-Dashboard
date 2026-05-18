@@ -1,0 +1,13 @@
+# Windows
+Thumbs.db
+desktop.ini
+
+# PowerShell
+*.ps1xml
+*.psd1.bak
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
