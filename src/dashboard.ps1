@@ -187,6 +187,21 @@ $Script:webContainer = $Script:window.FindName("webContainer")
 $Script:webBrowser = New-Object Microsoft.Web.WebView2.Wpf.WebView2
 $Script:webContainer.Children.Add($Script:webBrowser) | Out-Null
 
+$Script:webBrowser.Add_CoreWebView2InitializationCompleted({
+    if (-not $args[1].IsSuccess) {
+        [System.Windows.MessageBox]::Show(
+            "WebView2-Initialisierung fehlgeschlagen:`n`n$($args[1].InitializationException.Message)`n`nStellst du sicher, dass Microsoft Edge installiert ist?",
+            "WebView2 Fehler",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+    }
+})
+
+$Script:window.Add_Loaded({
+    $null = $Script:webBrowser.EnsureCoreWebView2Async($null)
+})
+
 # ---------------------------------------------------------------------------
 # Tool starten
 # ---------------------------------------------------------------------------
@@ -195,9 +210,13 @@ function Start-Tool {
     param($Tool)
     try {
         if ($Tool.type -eq "web") {
-            $Script:welcomePanel.Visibility  = "Collapsed"
-            $Script:webContainer.Visibility  = "Visible"
-            $Script:webBrowser.Source        = [System.Uri]::new($Tool.url)
+            $Script:welcomePanel.Visibility = "Collapsed"
+            $Script:webContainer.Visibility = "Visible"
+            if ($Script:webBrowser.CoreWebView2) {
+                $Script:webBrowser.CoreWebView2.Navigate($Tool.url)
+            } else {
+                $Script:webBrowser.Source = [System.Uri]::new($Tool.url)
+            }
             return
         }
 
