@@ -1,0 +1,20 @@
+{
+  "tools": [
+    {
+      "id": "zahllauf",
+      "name": "Zahllauf",
+      "type": "powershell",
+      "path": "src\\taeglicherZahllauf.hta",
+      "icon": "⚙️",
+      "description": "Täglicher Zahllauf"
+    },
+    {
+      "id": "mittagsbestellung",
+      "name": "Mittagsbestellung",
+      "type": "web",
+      "url": "https://mittagessen.dialorsa.workers.dev/",
+      "icon": "🍽️",
+      "description": "Mittagsbestellung online aufgeben"
+    }
+  ]
+}
