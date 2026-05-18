@@ -268,6 +268,21 @@ function Build-Sidebar {
 # Einstellungen-Dialog
 # ---------------------------------------------------------------------------
 
+function Get-DefaultTools {
+    return @(
+        [PSCustomObject]@{
+            id = "beispiel_web"; name = "Beispiel Web"; type = "web"
+            icon = "?"; description = "Beispiel-Webanwendung"
+            url = "https://www.example.com"
+        },
+        [PSCustomObject]@{
+            id = "beispiel_ps"; name = "Beispiel Skript"; type = "powershell"
+            icon = "?"; description = "Beispiel PowerShell-Skript"
+            path = "C:\\Beispiel\\Skript.hta"
+        }
+    )
+}
+
 function Show-SettingsDialog {
 
     [xml]$SXaml = @'
@@ -328,18 +343,30 @@ function Show-SettingsDialog {
         </Grid.RowDefinitions>
 
         <!-- Linke Spalte: Tool-Liste -->
-        <DockPanel Grid.Column="0" Grid.Row="0">
-            <TextBlock DockPanel.Dock="Top" Text="Tools" FontWeight="SemiBold"
+        <Grid Grid.Column="0" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Tools" FontWeight="SemiBold"
                        FontSize="14" Foreground="#1A3347" Margin="0,0,0,8"/>
-            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
-                <Button x:Name="btnNew"    Content="+ Neu"    Style="{StaticResource Btn}"
-                        Background="#1E6DB5" Width="95"/>
-                <Button x:Name="btnDelete" Content="L&#246;schen" Style="{StaticResource Btn}"
-                        Background="#EF4444" Width="95" Margin="8,0,0,0"/>
-            </StackPanel>
-            <ListBox x:Name="lstTools" FontSize="13"
+
+            <ListBox Grid.Row="1" x:Name="lstTools" FontSize="13"
                      BorderBrush="#CBD5E1" BorderThickness="1"/>
-        </DockPanel>
+
+            <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="btnNew"    Content="+ Neu"    Style="{StaticResource Btn}"
+                            Background="#1E6DB5" Width="95"/>
+                    <Button x:Name="btnDelete" Content="L&#246;schen" Style="{StaticResource Btn}"
+                            Background="#EF4444" Width="95" Margin="8,0,0,0"/>
+                </StackPanel>
+                <Button x:Name="btnReset" Content="Werkseinstellungen" Style="{StaticResource Btn}"
+                        Background="#94A3B8" HorizontalAlignment="Stretch" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Rechte Spalte: Formular -->
         <ScrollViewer Grid.Column="2" Grid.Row="0" VerticalScrollBarVisibility="Auto">
@@ -391,6 +418,7 @@ function Show-SettingsDialog {
     $sLst    = $sWin.FindName("lstTools")
     $sBtnNew = $sWin.FindName("btnNew")
     $sBtnDel = $sWin.FindName("btnDelete")
+    $sBtnRst = $sWin.FindName("btnReset")
     $sBtnSav = $sWin.FindName("btnSave")
     $sBtnCls = $sWin.FindName("btnClose")
     $sTxtNam = $sWin.FindName("txtName")
@@ -442,6 +470,25 @@ function Show-SettingsDialog {
     })
 
     $sBtnNew.Add_Click({ S-ClearForm })
+
+    $sBtnRst.Add_Click({
+        $res = [System.Windows.MessageBox]::Show(
+            "Alle Tools loeschen und Beispiel-Tools wiederherstellen?",
+            "Auf Werkseinstellungen zuruecksetzen",
+            [System.Windows.MessageBoxButton]::YesNo,
+            [System.Windows.MessageBoxImage]::Warning
+        )
+        if ($res -eq "Yes") {
+            $Script:dlgTools.Clear()
+            foreach ($t in Get-DefaultTools) {
+                $Script:dlgTools.Add($t) | Out-Null
+            }
+            Save-Tools $Script:dlgTools
+            Build-Sidebar
+            S-RefreshList
+            S-ClearForm
+        }
+    })
 
     $sBtnDel.Add_Click({
         $i = $Script:dlgSelIdx
