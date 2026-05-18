@@ -5,6 +5,22 @@ Add-Type -AssemblyName WindowsBase
 
 $Script:ScriptDir = $PSScriptRoot
 $Script:ToolsFile = Join-Path $Script:ScriptDir "tools.json"
+$Script:LibDir    = Join-Path $Script:ScriptDir "lib"
+
+$wv2Wpf = Join-Path $Script:LibDir "Microsoft.Web.WebView2.Wpf.dll"
+if (-not (Test-Path $wv2Wpf)) {
+    Add-Type -AssemblyName PresentationFramework
+    [System.Windows.MessageBox]::Show(
+        "WebView2-Bibliotheken nicht gefunden.`nBitte zuerst ausfuehren:`n`n  src\Get-WebView2Libs.ps1",
+        "Fehlende Abhaengigkeit",
+        [System.Windows.MessageBoxButton]::OK,
+        [System.Windows.MessageBoxImage]::Error
+    ) | Out-Null
+    exit
+}
+$env:PATH = "$Script:LibDir;$env:PATH"
+Add-Type -Path (Join-Path $Script:LibDir "Microsoft.Web.WebView2.Core.dll")
+Add-Type -Path $wv2Wpf
 
 # ---------------------------------------------------------------------------
 # Datenzugriff
@@ -40,6 +56,7 @@ function Save-Tools {
 [xml]$MainXaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="JC Dashboard" Height="720" Width="1200"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI">
@@ -151,8 +168,8 @@ function Save-Tools {
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- WebBrowser (f&#252;r Web-Tools) -->
-            <WebBrowser x:Name="webBrowser" Visibility="Collapsed"/>
+            <!-- WebView2 (Chromium-Engine) -->
+            <wv2:WebView2 x:Name="webBrowser" Visibility="Collapsed"/>
 
         </Grid>
 
@@ -178,7 +195,7 @@ function Start-Tool {
         if ($Tool.type -eq "web") {
             $Script:welcomePanel.Visibility = "Collapsed"
             $Script:webBrowser.Visibility   = "Visible"
-            $Script:webBrowser.Navigate($Tool.url)
+            $Script:webBrowser.Source = [System.Uri]::new($Tool.url)
             return
         }
 

@@ -11,3 +11,6 @@ desktop.ini
 
 # VS Code
 .vscode/
+
+# WebView2 DLLs (via Get-WebView2Libs.ps1 lokal beschaffen)
+src/lib/
