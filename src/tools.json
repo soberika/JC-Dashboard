@@ -1,20 +1,28 @@
-{
+﻿{
     "tools":  [
                   {
-                      "id":  "mittagsbestellung",
-                      "name":  "Mittagsbestellung",
+                      "id":  "beispiel_web",
+                      "name":  "Beispiel Web",
                       "type":  "web",
-                      "icon":  "FOOD",
-                      "description":  "Täglicher Zahllauf Mittagsbestellung online aufgeben",
-                      "url":  "https://mittagessen.dialorsa.workers.dev/"
+                      "icon":  "?",
+                      "description":  "Beispiel-Webanwendung",
+                      "url":  "https://www.example.com"
                   },
                   {
-                      "id":  "skript",
-                      "name":  "Skript",
+                      "id":  "beispiel_ps",
+                      "name":  "Beispiel Skript",
                       "type":  "powershell",
                       "icon":  "?",
-                      "description":  "",
-                      "path":  "C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta"
+                      "description":  "Beispiel PowerShell-Skript",
+                      "path":  "C:\\\\Beispiel\\\\Skript.hta"
+                  },
+                  {
+                      "id":  "lol",
+                      "name":  "lol",
+                      "type":  "powershell",
+                      "icon":  "lol",
+                      "description":  "lol",
+                      "path":  "lol"
                   }
               ]
 }
