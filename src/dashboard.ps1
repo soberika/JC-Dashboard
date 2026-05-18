@@ -5,22 +5,6 @@ Add-Type -AssemblyName WindowsBase
 
 $Script:ScriptDir = $PSScriptRoot
 $Script:ToolsFile = Join-Path $Script:ScriptDir "tools.json"
-$Script:LibDir    = Join-Path $Script:ScriptDir "lib"
-
-$wv2Wpf = Join-Path $Script:LibDir "Microsoft.Web.WebView2.Wpf.dll"
-if (-not (Test-Path $wv2Wpf)) {
-    Add-Type -AssemblyName PresentationFramework
-    [System.Windows.MessageBox]::Show(
-        "WebView2-Bibliotheken nicht gefunden.`nBitte zuerst ausfuehren:`n`n  src\Get-WebView2Libs.ps1",
-        "Fehlende Abhaengigkeit",
-        [System.Windows.MessageBoxButton]::OK,
-        [System.Windows.MessageBoxImage]::Error
-    ) | Out-Null
-    exit
-}
-$env:PATH = "$Script:LibDir;$env:PATH"
-Add-Type -Path (Join-Path $Script:LibDir "Microsoft.Web.WebView2.Core.dll")
-Add-Type -Path $wv2Wpf
 
 # ---------------------------------------------------------------------------
 # Datenzugriff
@@ -154,7 +138,6 @@ function Save-Tools {
         <!-- Inhaltsbereich -->
         <Grid Grid.Column="1" Background="#F0F4F8">
 
-            <!-- Willkommens-Panel -->
             <StackPanel x:Name="welcomePanel"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="&#128075;" FontSize="52" HorizontalAlignment="Center"/>
@@ -166,9 +149,6 @@ function Save-Tools {
                            Foreground="#607D8B" FontSize="14"
                            HorizontalAlignment="Center"/>
             </StackPanel>
-
-            <!-- WebView2-Container (Control wird per Code eingefuegt) -->
-            <Grid x:Name="webContainer" Visibility="Collapsed"/>
 
         </Grid>
 
@@ -182,25 +162,6 @@ $Script:window       = [System.Windows.Markup.XamlReader]::Load($reader)
 $Script:toolList     = $Script:window.FindName("toolList")
 $Script:btnSettings  = $Script:window.FindName("btnSettings")
 $Script:welcomePanel = $Script:window.FindName("welcomePanel")
-$Script:webContainer = $Script:window.FindName("webContainer")
-
-$Script:webBrowser = New-Object Microsoft.Web.WebView2.Wpf.WebView2
-$Script:webContainer.Children.Add($Script:webBrowser) | Out-Null
-
-$Script:webBrowser.Add_CoreWebView2InitializationCompleted({
-    if (-not $args[1].IsSuccess) {
-        [System.Windows.MessageBox]::Show(
-            "WebView2-Initialisierung fehlgeschlagen:`n`n$($args[1].InitializationException.Message)`n`nStellst du sicher, dass Microsoft Edge installiert ist?",
-            "WebView2 Fehler",
-            [System.Windows.MessageBoxButton]::OK,
-            [System.Windows.MessageBoxImage]::Error
-        ) | Out-Null
-    }
-})
-
-$Script:window.Add_Loaded({
-    $null = $Script:webBrowser.EnsureCoreWebView2Async($null)
-})
 
 # ---------------------------------------------------------------------------
 # Tool starten
@@ -210,13 +171,7 @@ function Start-Tool {
     param($Tool)
     try {
         if ($Tool.type -eq "web") {
-            $Script:welcomePanel.Visibility = "Collapsed"
-            $Script:webContainer.Visibility = "Visible"
-            if ($Script:webBrowser.CoreWebView2) {
-                $Script:webBrowser.CoreWebView2.Navigate($Tool.url)
-            } else {
-                $Script:webBrowser.Source = [System.Uri]::new($Tool.url)
-            }
+            Start-Process $Tool.url
             return
         }
 
