@@ -56,7 +56,6 @@ function Save-Tools {
 [xml]$MainXaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="JC Dashboard" Height="720" Width="1200"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI">
@@ -168,8 +167,8 @@ function Save-Tools {
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- WebView2 (Chromium-Engine) -->
-            <wv2:WebView2 x:Name="webBrowser" Visibility="Collapsed"/>
+            <!-- WebView2-Container (Control wird per Code eingefuegt) -->
+            <Grid x:Name="webContainer" Visibility="Collapsed"/>
 
         </Grid>
 
@@ -183,7 +182,10 @@ $Script:window       = [System.Windows.Markup.XamlReader]::Load($reader)
 $Script:toolList     = $Script:window.FindName("toolList")
 $Script:btnSettings  = $Script:window.FindName("btnSettings")
 $Script:welcomePanel = $Script:window.FindName("welcomePanel")
-$Script:webBrowser   = $Script:window.FindName("webBrowser")
+$Script:webContainer = $Script:window.FindName("webContainer")
+
+$Script:webBrowser = New-Object Microsoft.Web.WebView2.Wpf.WebView2
+$Script:webContainer.Children.Add($Script:webBrowser) | Out-Null
 
 # ---------------------------------------------------------------------------
 # Tool starten
@@ -193,9 +195,9 @@ function Start-Tool {
     param($Tool)
     try {
         if ($Tool.type -eq "web") {
-            $Script:welcomePanel.Visibility = "Collapsed"
-            $Script:webBrowser.Visibility   = "Visible"
-            $Script:webBrowser.Source = [System.Uri]::new($Tool.url)
+            $Script:welcomePanel.Visibility  = "Collapsed"
+            $Script:webContainer.Visibility  = "Visible"
+            $Script:webBrowser.Source        = [System.Uri]::new($Tool.url)
             return
         }
 
