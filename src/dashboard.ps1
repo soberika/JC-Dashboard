@@ -3,17 +3,17 @@ Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 
-$ScriptDir = $PSScriptRoot
-$ToolsFile = Join-Path $ScriptDir "tools.json"
+$Script:ScriptDir = $PSScriptRoot
+$Script:ToolsFile = Join-Path $Script:ScriptDir "tools.json"
 
 # ---------------------------------------------------------------------------
 # Datenzugriff
 # ---------------------------------------------------------------------------
 
 function Load-Tools {
-    if (-not (Test-Path $ToolsFile)) { return , @() }
+    if (-not (Test-Path $Script:ToolsFile)) { return , @() }
     try {
-        $json = Get-Content $ToolsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $json = Get-Content $Script:ToolsFile -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($json.tools) { return , $json.tools } else { return , @() }
     } catch {
         [System.Windows.MessageBox]::Show(
@@ -30,7 +30,7 @@ function Save-Tools {
     param([System.Collections.ArrayList]$Tools)
     $obj  = [ordered]@{ tools = @($Tools) }
     $json = $obj | ConvertTo-Json -Depth 5
-    $json | Set-Content -Path $ToolsFile -Encoding UTF8
+    $json | Set-Content -Path $Script:ToolsFile -Encoding UTF8
 }
 
 # ---------------------------------------------------------------------------
