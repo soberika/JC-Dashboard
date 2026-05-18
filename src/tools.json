@@ -16,7 +16,7 @@
                       "type":  "powershell",
                       "icon":  "?",
                       "description":  "",
-                      "path":  "\"C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta\""
+                      "path":  "C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta\"
                   }
               ]
 }
