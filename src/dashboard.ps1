@@ -161,12 +161,12 @@ function Save-Tools {
 '@
 
 $reader = New-Object System.Xml.XmlNodeReader($MainXaml)
-$window = [System.Windows.Markup.XamlReader]::Load($reader)
+$Script:window       = [System.Windows.Markup.XamlReader]::Load($reader)
 
-$toolList     = $window.FindName("toolList")
-$btnSettings  = $window.FindName("btnSettings")
-$welcomePanel = $window.FindName("welcomePanel")
-$webBrowser   = $window.FindName("webBrowser")
+$Script:toolList     = $Script:window.FindName("toolList")
+$Script:btnSettings  = $Script:window.FindName("btnSettings")
+$Script:welcomePanel = $Script:window.FindName("welcomePanel")
+$Script:webBrowser   = $Script:window.FindName("webBrowser")
 
 # ---------------------------------------------------------------------------
 # Tool starten
@@ -174,31 +174,38 @@ $webBrowser   = $window.FindName("webBrowser")
 
 function Start-Tool {
     param($Tool)
-
-    if ($Tool.type -eq "web") {
-        $welcomePanel.Visibility = "Collapsed"
-        $webBrowser.Visibility   = "Visible"
-        $webBrowser.Navigate($Tool.url)
-        return
-    }
-
-    if ($Tool.type -eq "powershell") {
-        $path = if ([System.IO.Path]::IsPathRooted($Tool.path)) {
-            $Tool.path
-        } else {
-            Join-Path $ScriptDir $Tool.path
+    try {
+        if ($Tool.type -eq "web") {
+            $Script:welcomePanel.Visibility = "Collapsed"
+            $Script:webBrowser.Visibility   = "Visible"
+            $Script:webBrowser.Navigate($Tool.url)
+            return
         }
 
-        if (Test-Path $path) {
-            Start-Process $path
-        } else {
-            [System.Windows.MessageBox]::Show(
-                "Datei nicht gefunden:`n$path",
-                "Fehler",
-                [System.Windows.MessageBoxButton]::OK,
-                [System.Windows.MessageBoxImage]::Warning
-            ) | Out-Null
+        if ($Tool.type -eq "powershell") {
+            $path = if ([System.IO.Path]::IsPathRooted($Tool.path)) {
+                $Tool.path
+            } else {
+                Join-Path $Script:ScriptDir $Tool.path
+            }
+            if (Test-Path $path) {
+                Start-Process $path
+            } else {
+                [System.Windows.MessageBox]::Show(
+                    "Datei nicht gefunden:`n$path",
+                    "Fehler",
+                    [System.Windows.MessageBoxButton]::OK,
+                    [System.Windows.MessageBoxImage]::Warning
+                ) | Out-Null
+            }
         }
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Fehler beim Starten von '$($Tool.name)':`n$_",
+            "Fehler",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
     }
 }
 
@@ -207,15 +214,15 @@ function Start-Tool {
 # ---------------------------------------------------------------------------
 
 function Build-Sidebar {
-    $toolList.Children.Clear()
+    $Script:toolList.Children.Clear()
     $tools = Load-Tools
 
     foreach ($tool in $tools) {
-        $card            = New-Object System.Windows.Controls.Border
+        $card             = New-Object System.Windows.Controls.Border
         $card.CornerRadius = "7"
-        $card.Margin     = New-Object System.Windows.Thickness(8, 3, 8, 3)
-        $card.Background = [System.Windows.Media.SolidColorBrush][System.Windows.Media.Color]::FromRgb(0x1A, 0x35, 0x4F)
-        $card.Padding    = New-Object System.Windows.Thickness(12, 10, 12, 10)
+        $card.Margin      = New-Object System.Windows.Thickness(8, 3, 8, 3)
+        $card.Background  = [System.Windows.Media.SolidColorBrush][System.Windows.Media.Color]::FromRgb(0x1A, 0x35, 0x4F)
+        $card.Padding     = New-Object System.Windows.Thickness(12, 10, 12, 10)
 
         $grid = New-Object System.Windows.Controls.Grid
         $c1   = New-Object System.Windows.Controls.ColumnDefinition
@@ -225,41 +232,42 @@ function Build-Sidebar {
         $grid.ColumnDefinitions.Add($c1)
         $grid.ColumnDefinitions.Add($c2)
 
-        # Info-Bereich (links)
-        $info              = New-Object System.Windows.Controls.StackPanel
-        $info.Orientation  = "Vertical"
+        $info             = New-Object System.Windows.Controls.StackPanel
+        $info.Orientation = "Vertical"
 
-        $lblName           = New-Object System.Windows.Controls.TextBlock
-        $lblName.Text      = "$($tool.icon)  $($tool.name)"
+        $lblName            = New-Object System.Windows.Controls.TextBlock
+        $lblName.Text       = "$($tool.icon)  $($tool.name)"
         $lblName.Foreground = "#E2EAF2"
-        $lblName.FontSize  = 14
+        $lblName.FontSize   = 14
         $lblName.FontWeight = "SemiBold"
 
-        $lblType           = New-Object System.Windows.Controls.TextBlock
-        $lblType.Text      = if ($tool.type -eq "web") { "Webanwendung" } else { "PowerShell" }
+        $lblType            = New-Object System.Windows.Controls.TextBlock
+        $lblType.Text       = if ($tool.type -eq "web") { "Webanwendung" } else { "PowerShell" }
         $lblType.Foreground = "#4A6A85"
-        $lblType.FontSize  = 11
-        $lblType.Margin    = New-Object System.Windows.Thickness(0, 2, 0, 0)
+        $lblType.FontSize   = 11
+        $lblType.Margin     = New-Object System.Windows.Thickness(0, 2, 0, 0)
 
         $info.Children.Add($lblName) | Out-Null
         $info.Children.Add($lblType) | Out-Null
         [System.Windows.Controls.Grid]::SetColumn($info, 0)
         $grid.Children.Add($info) | Out-Null
 
-        # Starten-Button (rechts)
-        $btn                    = New-Object System.Windows.Controls.Button
-        $btn.Content            = "Starten"
-        $btn.Style              = $window.FindResource("StartButton")
-        $btn.VerticalAlignment  = "Center"
+        $btn                   = New-Object System.Windows.Controls.Button
+        $btn.Content           = "Starten"
+        $btn.Style             = $Script:window.FindResource("StartButton")
+        $btn.VerticalAlignment = "Center"
+        $btn.Tag               = $tool
 
-        $capturedTool = $tool
-        $btn.Add_Click({ Start-Tool $capturedTool }.GetNewClosure())
+        $btn.Add_Click({
+            $t = $args[0].Tag
+            Start-Tool $t
+        })
 
         [System.Windows.Controls.Grid]::SetColumn($btn, 1)
         $grid.Children.Add($btn) | Out-Null
 
         $card.Child = $grid
-        $toolList.Children.Add($card) | Out-Null
+        $Script:toolList.Children.Add($card) | Out-Null
     }
 }
 
@@ -503,8 +511,8 @@ function Show-SettingsDialog {
 # Start
 # ---------------------------------------------------------------------------
 
-$btnSettings.Add_Click({ Show-SettingsDialog })
+$Script:btnSettings.Add_Click({ Show-SettingsDialog })
 
 Build-Sidebar
 
-$window.ShowDialog() | Out-Null
+$Script:window.ShowDialog() | Out-Null
