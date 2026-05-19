@@ -1,10 +1,10 @@
-﻿{
+{
     "tools":  [
                   {
                       "id":  "beispiel_web",
                       "name":  "Beispiel Webanwendung",
                       "type":  "web",
-                      "icon":  "WEB",
+                      "icon":  "🌐",
                       "description":  "Eine Beispiel-Webseite",
                       "url":  "https://www.example.com",
                       "tags":  [
@@ -22,7 +22,7 @@
                       "id":  "beispiel_ps",
                       "name":  "Beispiel PowerShell-Skript",
                       "type":  "powershell",
-                      "icon":  "PS",
+                      "icon":  "🖥️",
                       "description":  "Ein Beispiel PowerShell-Skript",
                       "path":  "C:\\Beispiel\\Skript.ps1",
                       "tags":  [
@@ -40,7 +40,7 @@
                       "id":  "beispiel_hta",
                       "name":  "Beispiel HTA-Anwendung",
                       "type":  "hta",
-                      "icon":  "HTA",
+                      "icon":  "🪟",
                       "description":  "Eine Beispiel HTML-Application",
                       "path":  "C:\\Beispiel\\Anwendung.hta",
                       "tags":  [
@@ -58,7 +58,7 @@
                       "id":  "mittagessen",
                       "name":  "Mittagessen",
                       "type":  "web",
-                      "icon":  "FOOD",
+                      "icon":  "🍔",
                       "description":  "Weil Anrufen und Zurufe auf dem Gang Nerven",
                       "tags":  [
                                    "Fun",
@@ -76,7 +76,7 @@
                       "id":  "open_tools",
                       "name":  "OPEN TOOLS",
                       "type":  "web",
-                      "icon":  "ML",
+                      "icon":  "🧰",
                       "description":  "",
                       "tags":  [
                                    "JC"
@@ -93,7 +93,7 @@
                       "id":  "systemer_wiki",
                       "name":  "Systemer-Wiki",
                       "type":  "web",
-                      "icon":  "ML",
+                      "icon":  "📚",
                       "description":  "",
                       "tags":  [
                                    "JC"

@@ -15,6 +15,16 @@ $Script:CurrentMode      = "recent"
 $Script:CurrentTheme     = "light"
 $Script:IgnoreModeChange = $false
 
+# Farb-Map fuer Tool-Badges (erweiterbar). Schluessel = lowercase type / tag.
+$Script:ToolTypeColors = [ordered]@{
+    "powershell" = "#1E6DB5"   # Blau
+    "web"        = "#16A34A"   # Gruen
+    "hta"        = "#F59E0B"   # Orange
+    "ml"         = "#8B5CF6"   # Lila  (Tag-Fallback)
+    "jc"         = "#14B8A6"   # Teal  (Tag-Fallback)
+    "default"    = "#64748B"   # Grau  (Fallback)
+}
+
 $Script:DefaultHelpText = @'
 # JC Dashboard - Hilfe
 
@@ -345,7 +355,7 @@ function Filter-Tools {
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="bd" Background="Transparent"
                                 BorderBrush="#1E3A52" BorderThickness="0,0,0,1">
-                            <ContentPresenter Margin="14,10"/>
+                            <ContentPresenter Margin="14,13"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -627,9 +637,15 @@ function Filter-Tools {
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="32,28,32,32">
 
-                    <TextBlock x:Name="detailTitle"
-                               FontSize="26" FontWeight="Bold"
-                               Foreground="{DynamicResource AppText}" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ContentControl x:Name="detailBadgeHost"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,18,0"/>
+                        <TextBlock x:Name="detailTitle"
+                                   FontSize="26" FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppText}" TextWrapping="Wrap"/>
+                    </StackPanel>
 
                     <WrapPanel x:Name="detailMeta" Margin="0,10,0,14"/>
 
@@ -675,6 +691,7 @@ $Script:col2Title        = $Script:window.FindName("col2Title")
 $Script:welcomePanel     = $Script:window.FindName("welcomePanel")
 $Script:detailScroll     = $Script:window.FindName("detailScroll")
 $Script:detailTitle      = $Script:window.FindName("detailTitle")
+$Script:detailBadgeHost  = $Script:window.FindName("detailBadgeHost")
 $Script:detailMeta       = $Script:window.FindName("detailMeta")
 $Script:detailTags       = $Script:window.FindName("detailTags")
 $Script:docViewer        = $Script:window.FindName("docViewer")
@@ -804,6 +821,80 @@ function Convert-MarkdownToFlowDocument {
 # Hilfsfunktionen UI
 # ---------------------------------------------------------------------------
 
+# Liefert die Hex-Farbe fuer den Badge eines Tools.
+# Erst Typ-Match, dann Tag-Fallback (ML/JC), sonst Default-Grau.
+function Get-ToolBadgeColor {
+    param($Tool)
+    if (-not $Tool) { return $Script:ToolTypeColors["default"] }
+    $type = if ($Tool.type) { ([string]$Tool.type).ToLower() } else { "" }
+    if ($type -and $Script:ToolTypeColors.Contains($type)) {
+        return $Script:ToolTypeColors[$type]
+    }
+    if ($Tool.tags) {
+        foreach ($t in $Tool.tags) {
+            $low = ([string]$t).ToLower()
+            if ($Script:ToolTypeColors.Contains($low)) {
+                return $Script:ToolTypeColors[$low]
+            }
+        }
+    }
+    return $Script:ToolTypeColors["default"]
+}
+
+# Erzeugt einen runden Emoji-Badge (Border + zentrierter TextBlock).
+# Faellt auf "?" + Grau zurueck, wenn kein Icon vorhanden ist.
+function New-ToolBadge {
+    param(
+        $Tool,
+        [int]$Size = 40,
+        [string]$OverrideIcon = $null,
+        [string]$OverrideColor = $null
+    )
+    $color = if ($OverrideColor) { $OverrideColor } else { Get-ToolBadgeColor -Tool $Tool }
+    $emoji = if ($null -ne $OverrideIcon) { $OverrideIcon } `
+             elseif ($Tool -and $Tool.icon -and -not [string]::IsNullOrWhiteSpace([string]$Tool.icon)) { [string]$Tool.icon } `
+             else { "?" }
+
+    $bConv  = [System.Windows.Media.BrushConverter]::new()
+    $border = New-Object System.Windows.Controls.Border
+    $border.Width        = $Size
+    $border.Height       = $Size
+    $border.CornerRadius = New-Object System.Windows.CornerRadius(999)
+    $border.Background   = $bConv.ConvertFromString($color)
+    $border.HorizontalAlignment = "Center"
+    $border.VerticalAlignment   = "Center"
+    $border.SnapsToDevicePixels = $true
+
+    # weicher Schatten fuer Tiefen-Effekt
+    $shadow             = New-Object System.Windows.Media.Effects.DropShadowEffect
+    $shadow.BlurRadius  = 8
+    $shadow.ShadowDepth = 2
+    $shadow.Direction   = 270
+    $shadow.Opacity     = 0.35
+    $shadow.Color       = [System.Windows.Media.ColorConverter]::ConvertFromString("#000000")
+    $border.Effect      = $shadow
+
+    # Emoji/Text perfekt zentriert via Viewbox (skaliert konsistent)
+    $tb                     = New-Object System.Windows.Controls.TextBlock
+    $tb.Text                = $emoji
+    $tb.Foreground          = $bConv.ConvertFromString("#FFFFFF")
+    $tb.FontWeight          = "SemiBold"
+    $tb.HorizontalAlignment = "Center"
+    $tb.VerticalAlignment   = "Center"
+    $tb.TextAlignment       = "Center"
+
+    $vb                     = New-Object System.Windows.Controls.Viewbox
+    $vb.Stretch             = "Uniform"
+    $vb.HorizontalAlignment = "Center"
+    $vb.VerticalAlignment   = "Center"
+    $pad                    = [Math]::Round($Size * 0.22)
+    $vb.Margin              = New-Object System.Windows.Thickness($pad)
+    $vb.Child               = $tb
+    $border.Child           = $vb
+
+    return $border
+}
+
 function New-MetaChip {
     param([string]$Text, [string]$BgHex)
     $conv   = [System.Windows.Media.BrushConverter]::new()
@@ -841,10 +932,48 @@ function Add-ToolListItem {
     $item.Style = $Script:window.FindResource("ToolItem")
     $item.Tag   = $Tool
 
+    # 2-Spalten-Grid: Badge | Texte
+    $grid = New-Object System.Windows.Controls.Grid
+    $colBadge = New-Object System.Windows.Controls.ColumnDefinition
+    $colBadge.Width = [System.Windows.GridLength]::Auto
+    $colText  = New-Object System.Windows.Controls.ColumnDefinition
+    $colText.Width  = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+    $grid.ColumnDefinitions.Add($colBadge) | Out-Null
+    $grid.ColumnDefinitions.Add($colText)  | Out-Null
+
+    $badge = New-ToolBadge -Tool $Tool -Size 40
+    $badge.Margin = New-Object System.Windows.Thickness(0, 0, 14, 0)
+    [System.Windows.Controls.Grid]::SetColumn($badge, 0)
+    $grid.Children.Add($badge) | Out-Null
+
+    # Hover-Glow auf dem Badge: kraeftigerer Schatten in Badge-Farbe
+    $badge.Tag = $badge.Background.Color
+    $badge.Add_MouseEnter({
+        $b = $args[0]
+        $e = New-Object System.Windows.Media.Effects.DropShadowEffect
+        $e.BlurRadius  = 14
+        $e.ShadowDepth = 0
+        $e.Opacity     = 0.65
+        $e.Color       = $b.Tag
+        $b.Effect      = $e
+    })
+    $badge.Add_MouseLeave({
+        $b = $args[0]
+        $e = New-Object System.Windows.Media.Effects.DropShadowEffect
+        $e.BlurRadius  = 8
+        $e.ShadowDepth = 2
+        $e.Direction   = 270
+        $e.Opacity     = 0.35
+        $e.Color       = [System.Windows.Media.ColorConverter]::ConvertFromString("#000000")
+        $b.Effect      = $e
+    })
+
     $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.VerticalAlignment = "Center"
+    [System.Windows.Controls.Grid]::SetColumn($sp, 1)
 
     $nameBlock              = New-Object System.Windows.Controls.TextBlock
-    $nameBlock.Text         = "$($Tool.icon)  $($Tool.name)"
+    $nameBlock.Text         = [string]$Tool.name
     $nameBlock.FontSize     = 13
     $nameBlock.FontWeight   = "SemiBold"
     $nameBlock.Foreground   = "#E2EAF2"
@@ -855,15 +984,17 @@ function Add-ToolListItem {
         "hta"   { "HTA-Anwendung"  }
         default { "PowerShell"     }
     }
-    $typeBlock           = New-Object System.Windows.Controls.TextBlock
-    $typeBlock.Text      = $typeLabel
-    $typeBlock.FontSize  = 11
-    $typeBlock.Foreground = "#4A6A85"
-    $typeBlock.Margin    = New-Object System.Windows.Thickness(0, 2, 0, 0)
+    $typeBlock            = New-Object System.Windows.Controls.TextBlock
+    $typeBlock.Text       = $typeLabel
+    $typeBlock.FontSize   = 11
+    $typeBlock.Foreground = "#7C9AB8"
+    $typeBlock.Margin     = New-Object System.Windows.Thickness(0, 2, 0, 0)
 
     $sp.Children.Add($nameBlock) | Out-Null
     $sp.Children.Add($typeBlock) | Out-Null
-    $item.Content = $sp
+    $grid.Children.Add($sp) | Out-Null
+
+    $item.Content = $grid
     $Script:toolList.Items.Add($item) | Out-Null
 }
 
@@ -988,7 +1119,8 @@ function Show-ToolDetails {
     $Script:welcomePanel.Visibility = "Collapsed"
     $Script:detailScroll.Visibility = "Visible"
 
-    $Script:detailTitle.Text = "$($Tool.icon)  $($Tool.name)"
+    $Script:detailTitle.Text = [string]$Tool.name
+    $Script:detailBadgeHost.Content = New-ToolBadge -Tool $Tool -Size 54
 
     # Meta-Chips
     $Script:detailMeta.Children.Clear()
@@ -997,7 +1129,7 @@ function Show-ToolDetails {
         "hta"   { "HTA-Anwendung" }
         default { "PowerShell"    }
     }
-    $Script:detailMeta.Children.Add((New-MetaChip -Text $catText -BgHex "#1E6DB5")) | Out-Null
+    $Script:detailMeta.Children.Add((New-MetaChip -Text $catText -BgHex (Get-ToolBadgeColor -Tool $Tool))) | Out-Null
 
     $versionDisplay = ""
     if ($Tool.version -and $Tool.version -ne "") {
@@ -1968,7 +2100,30 @@ function Show-SettingsDialog {
                 </Grid>
 
                 <TextBlock Style="{StaticResource Lbl}" Text="Icon (Emoji)"/>
-                <TextBox x:Name="txtIcon" Style="{StaticResource Txt}" MaxLength="4"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="txtIcon"
+                             Style="{StaticResource Txt}" MaxLength="4"
+                             VerticalAlignment="Top"/>
+                    <StackPanel Grid.Column="1" Margin="16,0,4,0"
+                                VerticalAlignment="Top">
+                        <Border BorderBrush="#CBD5E1" BorderThickness="1"
+                                CornerRadius="8" Padding="10,8" Background="#F8FAFC">
+                            <StackPanel>
+                                <ContentControl x:Name="iconPreviewHost"
+                                                HorizontalAlignment="Center"
+                                                Width="48" Height="48"/>
+                                <TextBlock Text="Live-Vorschau"
+                                           FontSize="11" Foreground="#94A3B8"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
 
                 <TextBlock Style="{StaticResource Lbl}" Text="Tags (Komma-getrennt)"/>
                 <TextBox x:Name="txtTags" Style="{StaticResource Txt}"/>
@@ -2048,6 +2203,7 @@ function Show-SettingsDialog {
     $sTxtPth    = $sWin.FindName("txtPath")
     $sBtnBrw    = $sWin.FindName("btnBrowse")
     $sTxtIco    = $sWin.FindName("txtIcon")
+    $sIcoPrev   = $sWin.FindName("iconPreviewHost")
     $sTxtTags   = $sWin.FindName("txtTags")
     $sTxtVer    = $sWin.FindName("txtVersion")
     $sDpDate    = $sWin.FindName("dpVersionDate")
@@ -2077,6 +2233,17 @@ function Show-SettingsDialog {
             $cap  = if ($img.caption) { "  -  $($img.caption)" } else { "" }
             $sLstImg.Items.Add("$name$cap") | Out-Null
         }
+    }
+
+    # Live-Vorschau-Badge im Einstellungen-Dialog aktualisieren.
+    function S-UpdateIconPreview {
+        $typeKey = switch ($sCmbTyp.SelectedIndex) {
+            1       { "hta" }
+            2       { "web" }
+            default { "powershell" }
+        }
+        $previewTool = [PSCustomObject]@{ icon = $sTxtIco.Text; type = $typeKey }
+        $sIcoPrev.Content = New-ToolBadge -Tool $previewTool -Size 48
     }
 
     function S-UpdatePathLabel {
@@ -2137,7 +2304,8 @@ function Show-SettingsDialog {
         $sTxtPth.Text = if ($t.type -eq "web") { $t.url } else { $t.path }
     }
 
-    $sCmbTyp.Add_SelectionChanged({ S-UpdatePathLabel })
+    $sCmbTyp.Add_SelectionChanged({ S-UpdatePathLabel; S-UpdateIconPreview })
+    $sTxtIco.Add_TextChanged({ S-UpdateIconPreview })
 
     $sLst.Add_SelectionChanged({
         $i = $sLst.SelectedIndex
@@ -2291,6 +2459,7 @@ function Show-SettingsDialog {
     $sBtnCls.Add_Click({ $sWin.Close() })
 
     S-RefreshList
+    S-UpdateIconPreview
     $sWin.ShowDialog() | Out-Null
 }
 
