@@ -28,7 +28,7 @@ JC-Dashboard/
 │   ├── dashboard.ps1          # Haupt-GUI (XAML + Code-Behind)
 │   ├── tools.json             # Tool-Konfiguration (wird von der GUI gelesen/geschrieben)
 │   ├── usage.json             # Nutzungs-Historie für "Zuletzt verwendet"
-│   ├── help.md                # Inhalt des Hilfe-Dialogs (in der App editierbar)
+│   ├── help/                  # Hilfe-Bibliothek: beliebig viele .md-Dateien (in der App editierbar)
 │   ├── changes.md             # Aenderungsprotokoll (in der App editierbar)
 │   ├── prefs.json             # Lokale Praeferenzen (Theme etc.) - in .gitignore
 │   └── Start-Dashboard.ps1    # Einstiegs-Skript → Rechtsklick "Mit PowerShell ausführen"
@@ -56,7 +56,7 @@ JC-Dashboard/
 - **Alle Tools (A-Z)** mit Suchfeld über Name, Tags, Beschreibung und Doku
 - **Detail-Pane**: Tags, Version + Versionsdatum, Markdown-Doku, Bilder-Galerie mit Lightbox-Zoom
 - **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen inkl. Tags, Version, Doku, Bildern → speichert sofort in `tools.json` + aktualisiert Sidebar
-- **Hilfe-Dialog** (Pop-up): rendert `help.md` als Markdown; **Bearbeiten/Speichern** direkt in der App, Inhalt persistiert in `src/help.md`
+- **Hilfe-Dialog** (Pop-up, Hub-Layout): linke Sidebar listet alle `.md`-Dateien aus `src/help/`, rechts die Lese-/Bearbeiten-Ansicht. **Neu / Umbenennen / Loeschen** direkt in der Sidebar, **Bearbeiten/Speichern** persistiert die jeweilige Datei. Reihenfolge per Dateinamen-Praefix (`01_`, `02_`).
 - **Änderungsprotokoll-Dialog**: gleicher generischer `Show-MarkdownDocDialog`, Inhalt in `src/changes.md`
 - **Dark-Mode-Switch**: ☾/☀-Icon in der Bottom-Bar; Brushes via `DynamicResource`, Apply-Theme tauscht zur Laufzeit, Auswahl in `prefs.json` persistiert
 - **Werkseinstellungen-Reset**: setzt `tools.json` auf Beispiel-Tools zurück (mit Bestätigungsdialog)
@@ -105,12 +105,12 @@ JC-Dashboard/
 - Praeferenz wird in `src/prefs.json` gespeichert (in `.gitignore`).
 - Col1/Col2 bleiben absichtlich immer dunkel; getauscht wird der Detail-Bereich (Col3) und der Hilfe-/Aenderungen-Dialog. Der Einstellungen-Dialog bleibt hell.
 
-### Markdown-Dokumente (`help.md`, `changes.md`)
-- Beide liegen unter `src/` und werden vom generischen `Show-MarkdownDocDialog` gelesen/geschrieben.
-- `help.md` → Hilfe-Dialog (Button **„❔ Hilfe öffnen"** auf der Startseite).
-- `changes.md` → Änderungsprotokoll-Dialog (Button **„📝 Änderungen"** auf der Startseite).
-- Falls eine Datei fehlt, wird sie aus `$Script:DefaultHelpText` bzw. `$Script:DefaultChangesText` in `dashboard.ps1` neu angelegt.
-- Im Dialog: **Bearbeiten** öffnet einen Markdown-Editor, **Speichern** persistiert und rendert neu.
+### Hilfe-Bibliothek (`src/help/*.md`)
+- Ordner `src/help/` enthaelt beliebig viele Markdown-Dateien. Dateiname (ohne `.md`) = Anzeigename.
+- Sortierung alphabetisch - Reihenfolge per Praefix steuern (`01_Uebersicht.md`, `02_Hilfe-Bibliothek.md`, ...).
+- Hilfe-Dialog (`Show-HelpHubDialog`): zweispaltiges Layout mit Doc-Liste links (Suchfeld, **+ Neu / Umbenennen / Loeschen**) und Reader/Editor rechts. **Bearbeiten / Speichern / Abbrechen** wirken auf das ausgewaehlte Dokument.
+- Migration: fehlt `src/help/`, wird der Ordner beim Oeffnen angelegt. Wenn er leer ist und eine alte `src/help.md` existiert, wird deren Inhalt als `01_Uebersicht.md` uebernommen, sonst `$Script:DefaultHelpText`.
+- Aenderungsprotokoll (`src/changes.md`) bleibt unveraendert: einzelnes Dokument, generischer `Show-MarkdownDocDialog`.
 
 ---
 
