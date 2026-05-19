@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Windows.Forms
 $Script:ScriptDir        = $PSScriptRoot
 $Script:ToolsFile        = Join-Path $Script:ScriptDir "tools.json"
 $Script:UsageFile        = Join-Path $Script:ScriptDir "usage.json"
-$Script:CurrentMode      = "recent"
+$Script:CurrentMode      = "home"
 $Script:IgnoreModeChange = $false
 
 # ---------------------------------------------------------------------------
@@ -204,6 +204,8 @@ function Filter-Tools {
             </Border>
             <ListBox x:Name="modeList" Background="Transparent"
                      BorderThickness="0" Margin="0,10,0,0">
+                <ListBoxItem Style="{StaticResource ModeItem}" Tag="home"
+                             Content="&#8962;  Startseite"/>
                 <ListBoxItem Style="{StaticResource ModeItem}" Tag="recent"
                              Content="Zuletzt verwendet"/>
                 <ListBoxItem Style="{StaticResource ModeItem}" Tag="all"
@@ -256,16 +258,26 @@ function Filter-Tools {
 
             <!-- Welcome -->
             <StackPanel x:Name="welcomePanel"
-                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        MaxWidth="460">
                 <TextBlock Text="&#128075;" FontSize="52"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Willkommen im JC Dashboard"
                            FontSize="22" FontWeight="SemiBold"
                            Foreground="#1A3347" HorizontalAlignment="Center"
-                           Margin="0,14,0,6"/>
-                <TextBlock Text="W&#228;hle links ein Tool aus."
-                           Foreground="#607D8B" FontSize="14"
-                           HorizontalAlignment="Center"/>
+                           Margin="0,14,0,8"/>
+                <TextBlock Foreground="#607D8B" FontSize="13"
+                           HorizontalAlignment="Center" TextWrapping="Wrap"
+                           TextAlignment="Center" Margin="0,0,0,10"
+                           Text="Diese Steuerzentrale verbindet PowerShell-Skripte, HTA-Anwendungen und Webseiten in einer konfigurierbaren Oberfl&#228;che."/>
+                <TextBlock Foreground="#94A3B8" FontSize="12"
+                           HorizontalAlignment="Center" TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Text="Linke Spalte: Navigation &#183; Mittlere Spalte: Tool-Liste &#183; Rechte Spalte: Details"/>
+                <Button x:Name="btnHelp"
+                        Content="&#8505;  Hilfe &amp; Dokumentation"
+                        Margin="0,22,0,0" HorizontalAlignment="Center"
+                        Style="{StaticResource StartButton}"/>
             </StackPanel>
 
             <!-- Details -->
@@ -327,6 +339,7 @@ $Script:detailTags       = $Script:window.FindName("detailTags")
 $Script:docViewer        = $Script:window.FindName("docViewer")
 $Script:imageGallery     = $Script:window.FindName("imageGallery")
 $Script:btnStartTool     = $Script:window.FindName("btnStartTool")
+$Script:btnHelp          = $Script:window.FindName("btnHelp")
 
 # ---------------------------------------------------------------------------
 # Markdown -> FlowDocument
@@ -523,6 +536,132 @@ function Show-WelcomePane {
 }
 
 # ---------------------------------------------------------------------------
+# Hilfe-Dialog
+# ---------------------------------------------------------------------------
+
+function Show-HelpDialog {
+    $helpMd = @'
+# JC Dashboard -- Hilfe & Dokumentation
+
+Das JC Dashboard ist eine konfigurierbare Steuerzentrale fuer PowerShell-Skripte, HTA-Anwendungen und Webseiten.
+
+## Navigation (drei Spalten)
+
+- **Linke Spalte** -- Modus-Auswahl (Startseite, Zuletzt, Alle Tools, Einstellungen)
+- **Mittlere Spalte** -- Tool-Liste; in "Alle Tools" mit Live-Suche
+- **Rechte Spalte** -- Details, Dokumentation, Bilder und Startschaltflaeche
+
+## Modi
+
+- **Startseite** -- Willkommensseite (diese Ansicht)
+- **Zuletzt verwendet** -- Die letzten 5 gestarteten Tools
+- **Alle Tools (A-Z)** -- Vollstaendige alphabetische Liste mit Suchfunktion
+- **Einstellungen** -- Tools hinzufuegen, bearbeiten oder loeschen
+
+## Tool hinzufuegen
+
+- Einstellungen oeffnen (linke Spalte)
+- + Neu klicken, Felder ausfuellen: Name, Typ, Pfad oder URL
+- Optional: Icon-Text, Tags, Version, Datum, Dokumentation, Bilder
+- Speichern klicken -- das Tool erscheint sofort in der Liste
+
+## Dokumentations-Format (Markdown)
+
+Im Einstellungs-Dialog koennen Tools mit Markdown dokumentiert werden:
+
+- Hauptueberschrift: # Titel
+- Unterueberschrift: ## Titel
+- Fettschrift: **Text**
+- Link: [Linktext](https://www.example.com)
+- Listenpunkt: - Text
+
+## Tool-Typen
+
+- **powershell** -- Startet eine .ps1-Datei via Start-Process
+- **hta** -- Startet eine .hta-Datei (mshta.exe, Internet Explorer Engine)
+- **web** -- Oeffnet eine URL im Standard-Browser des Systems
+
+## Konfigurationsdatei (tools.json)
+
+Alle Tools werden in **tools.json** im Skript-Ordner gespeichert. Der Einstellungen-Dialog schreibt diese Datei automatisch. Bei manueller Bearbeitung muessen Windows-Pfade doppelte Backslashes enthalten: C:\\Pfad\\Datei.ps1
+
+## Tipps
+
+- Bilder in der Galerie koennen angeklickt werden fuer Vollbild-Ansicht (ESC oder Klick schliesst)
+- Die Suche in "Alle Tools" durchsucht Name, Beschreibung, Dokumentation und Tags
+- Bei "Zuletzt verwendet" erscheinen maximal die letzten 5 gestarteten Tools
+- Werkseinstellungen zuruecksetzen: Einstellungen > Werkseinstellungen-Button
+'@
+
+    [xml]$HlpXaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hilfe &#8211; JC Dashboard"
+        Height="640" Width="700"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI"
+        Background="#F8FAFC">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <RichTextBox Grid.Row="0" x:Name="hlpViewer"
+                     IsReadOnly="True" BorderThickness="0"
+                     Background="Transparent"
+                     IsDocumentEnabled="True"
+                     Padding="28,24,28,12"
+                     FontSize="13"
+                     Foreground="#2D3748"
+                     VerticalScrollBarVisibility="Auto"/>
+        <Border Grid.Row="1" Background="#F1F5F9"
+                BorderBrush="#E2E8F0" BorderThickness="0,1,0,0">
+            <Button x:Name="btnHlpClose" Content="Schlie&#223;en"
+                    HorizontalAlignment="Right"
+                    Margin="24,12"
+                    Padding="20,9" FontSize="13"
+                    Background="#64748B" Foreground="White"
+                    BorderThickness="0" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Border>
+    </Grid>
+</Window>
+'@
+
+    $hr = New-Object System.Xml.XmlNodeReader($HlpXaml)
+    $Script:helpWin = [System.Windows.Markup.XamlReader]::Load($hr)
+    $Script:helpWin.Owner = $Script:window
+
+    $hlpViewer = $Script:helpWin.FindName("hlpViewer")
+    $hlpViewer.Document = Convert-MarkdownToFlowDocument -Text $helpMd
+
+    $btnHlpClose = $Script:helpWin.FindName("btnHlpClose")
+    $btnHlpClose.Add_Click({ $Script:helpWin.Close() })
+
+    $Script:helpWin.Add_KeyDown({
+        if ($args[1].Key -eq [System.Windows.Input.Key]::Escape) {
+            $Script:helpWin.Close()
+        }
+    })
+
+    $Script:helpWin.ShowDialog() | Out-Null
+}
+
+# ---------------------------------------------------------------------------
 # Bild-Lightbox
 # ---------------------------------------------------------------------------
 
@@ -590,6 +729,13 @@ function Build-ToolList {
     $Script:CurrentMode = $Mode
     $Script:toolList.Items.Clear()
     Show-WelcomePane
+
+    if ($Mode -eq "home") {
+        $Script:col2Header.Visibility   = "Visible"
+        $Script:searchBorder.Visibility = "Collapsed"
+        $Script:col2Title.Text          = "STARTSEITE"
+        return
+    }
 
     if ($Mode -eq "recent") {
         $Script:col2Header.Visibility  = "Visible"
@@ -1302,7 +1448,11 @@ $Script:modeList.Add_SelectionChanged({
         Show-SettingsDialog
         Build-ToolList -Mode $Script:CurrentMode
         $Script:IgnoreModeChange = $true
-        $Script:modeList.SelectedIndex = if ($Script:CurrentMode -eq "all") { 1 } else { 0 }
+        $Script:modeList.SelectedIndex = switch ($Script:CurrentMode) {
+            "all"    { 2 }
+            "recent" { 1 }
+            default  { 0 }
+        }
         $Script:IgnoreModeChange = $false
         return
     }
@@ -1331,6 +1481,8 @@ $Script:btnStartTool.Add_Click({
     $tool = $args[0].Tag
     if ($tool) { Start-Tool $tool }
 })
+
+$Script:btnHelp.Add_Click({ Show-HelpDialog })
 
 # ---------------------------------------------------------------------------
 # Start
