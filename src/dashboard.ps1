@@ -874,13 +874,16 @@ function New-ToolBadge {
     $shadow.Color       = [System.Windows.Media.ColorConverter]::ConvertFromString("#000000")
     $border.Effect      = $shadow
 
-    # Emoji/Text perfekt zentriert via Viewbox (skaliert konsistent)
+    # Emoji/Text perfekt zentriert via Viewbox (skaliert konsistent).
+    # FontFamily explizit setzen, damit WPF Color-Emojis (Segoe UI Emoji)
+    # statt nur Segoe UI verwendet und nichts leer rendert.
     $tb                     = New-Object System.Windows.Controls.TextBlock
     $tb.Text                = $emoji
     $tb.Foreground          = $bConv.ConvertFromString("#FFFFFF")
     $tb.FontWeight          = "SemiBold"
-    $tb.HorizontalAlignment = "Center"
-    $tb.VerticalAlignment   = "Center"
+    $tb.FontSize            = 24
+    $tb.FontFamily          = New-Object System.Windows.Media.FontFamily(
+        "Segoe UI Emoji, Segoe UI Symbol, Segoe UI")
     $tb.TextAlignment       = "Center"
 
     $vb                     = New-Object System.Windows.Controls.Viewbox
