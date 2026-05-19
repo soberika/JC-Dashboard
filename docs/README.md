@@ -25,6 +25,7 @@ Das Dashboard dient als **Launcher und zentrale Übersicht**, nicht als Ersatz f
 - **Einstellungen-Dialog**: Tools hinzufügen, bearbeiten, löschen — inkl. Tags, Version, Doku, Bildern
 - **Hilfe-Dialog** mit gerendertem Markdown, direkt in der App **bearbeitbar und speicherbar** (`src/help.md`)
 - **Änderungsprotokoll-Dialog** (`src/changes.md`), ebenfalls in der App editierbar
+- **Dark-Mode-Switch** unten in der Sidebar (☾/☀), Auswahl wird in `src/prefs.json` persistiert
 - **Werkseinstellungen**: setzt alle Tools auf Beispiel-Einträge zurück (mit Bestätigungsdialog)
 - Konfiguration komplett über `src/tools.json` — kein Code-Änderung nötig
 
@@ -109,6 +110,7 @@ JC-Dashboard/
 │   ├── usage.json           # Historie für "Zuletzt verwendet"
 │   ├── help.md              # Inhalt des Hilfe-Dialogs (editierbar in der App)
 │   ├── changes.md           # Aenderungsprotokoll (editierbar in der App)
+│   ├── prefs.json           # Lokale Praeferenzen (Theme etc., nicht in Git)
 │   └── Start-Dashboard.ps1  # Starter
 ├── assets/                  # Bilder, Screenshots
 ├── docs/
