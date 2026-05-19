@@ -79,7 +79,8 @@ function Get-RecentTools {
 
 function Filter-Tools {
     param([string]$Query)
-    $all = @(Load-Tools | Sort-Object name)
+    $loaded = Load-Tools
+    $all    = @($loaded | Sort-Object name)
     if ([string]::IsNullOrWhiteSpace($Query)) { return , $all }
     $q = $Query.ToLower()
     return , @($all | Where-Object {
@@ -545,7 +546,8 @@ function Build-ToolList {
         $Script:col2Header.Visibility   = "Collapsed"
         $Script:searchBorder.Visibility = "Visible"
         $Script:txtSearch.Text          = ""
-        $tools = @(Load-Tools | Sort-Object name)
+        $loaded = Load-Tools
+        $tools  = @($loaded | Sort-Object name)
         if ($tools.Count -eq 0) {
             Add-EmptyStateItem "Keine Tools konfiguriert."
         } else {
@@ -705,16 +707,43 @@ function Start-Tool {
 function Get-DefaultTools {
     return @(
         [PSCustomObject]@{
-            id = "beispiel_web"; name = "Beispiel Web"; type = "web"
-            icon = "?"; description = "Beispiel-Webanwendung"
-            url = "https://www.example.com"; tags = @(); doc = ""; images = @()
-            version = ""; versionDate = ""
+            id          = "beispiel_web"
+            name        = "Beispiel Webanwendung"
+            type        = "web"
+            icon        = "WEB"
+            description = "Eine Beispiel-Webseite"
+            url         = "https://www.example.com"
+            tags        = @("Info", "Demo")
+            version     = "1.0.0"
+            versionDate = "2026-01-15"
+            doc         = "# Beispiel Webanwendung`n`nDies ist ein **Beispiel-Eintrag** fuer ein Web-Tool.`n`n## Funktionen`n- Oeffnet eine Webseite im Standard-Browser`n- Demonstriert Tags, Version und Markdown-Doku`n`nMehr Infos unter [example.com](https://www.example.com)."
+            images      = @()
         },
         [PSCustomObject]@{
-            id = "beispiel_ps"; name = "Beispiel Skript"; type = "powershell"
-            icon = "?"; description = "Beispiel PowerShell-Skript"
-            path = "C:\\Beispiel\\Skript.hta"; tags = @(); doc = ""; images = @()
-            version = ""; versionDate = ""
+            id          = "beispiel_ps"
+            name        = "Beispiel PowerShell-Skript"
+            type        = "powershell"
+            icon        = "PS"
+            description = "Ein Beispiel PowerShell-Skript"
+            path        = "C:\\Beispiel\\Skript.ps1"
+            tags        = @("Fun", "Demo")
+            version     = "0.2"
+            versionDate = "2026-03-22"
+            doc         = "# Beispiel PowerShell-Skript`n`nStartet ein lokales **.ps1**-Skript via Start-Process.`n`n## Hinweise`n- Pfad in den Einstellungen anpassen`n- Backslashes muessen in JSON doppelt sein (C:\\Pfad\\Datei.ps1)"
+            images      = @()
+        },
+        [PSCustomObject]@{
+            id          = "beispiel_hta"
+            name        = "Beispiel HTA-Anwendung"
+            type        = "hta"
+            icon        = "HTA"
+            description = "Eine Beispiel HTML-Application"
+            path        = "C:\\Beispiel\\Anwendung.hta"
+            tags        = @("OPEN/Prosoz", "Info")
+            version     = "2.1"
+            versionDate = "2026-05-10"
+            doc         = "# Beispiel HTA-Anwendung`n`nHTA-Dateien werden ueber **mshta.exe** geoeffnet.`n`n## Details`n- Wird in eigenem Fenster ausgefuehrt`n- Ideal fuer Legacy-Tools mit HTML+VBScript`n- Kategorie wird in der Detail-Ansicht als **HTA-Anwendung** angezeigt"
+            images      = @()
         }
     )
 }
@@ -920,7 +949,8 @@ function Show-SettingsDialog {
     $sBtnRmImg  = $sWin.FindName("btnRemoveImage")
     $sTxtDsc    = $sWin.FindName("txtDesc")
 
-    $Script:dlgTools  = [System.Collections.ArrayList]@(Load-Tools)
+    $Script:dlgTools  = [System.Collections.ArrayList]@()
+    foreach ($t in (Load-Tools)) { $Script:dlgTools.Add($t) | Out-Null }
     $Script:dlgSelIdx = -1
 
     function S-RefreshList {
