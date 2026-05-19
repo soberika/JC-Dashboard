@@ -523,6 +523,65 @@ function Show-WelcomePane {
 }
 
 # ---------------------------------------------------------------------------
+# Bild-Lightbox
+# ---------------------------------------------------------------------------
+
+function Show-ImageLightbox {
+    param([string]$ImagePath, [string]$Caption)
+    if (-not (Test-Path $ImagePath)) { return }
+
+    [xml]$LbxXaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" WindowState="Maximized"
+        Background="#1A1A1A" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+    <Grid x:Name="root" Cursor="Hand">
+        <Image x:Name="lbxImg" Stretch="Uniform" Margin="40,40,40,90"/>
+        <TextBlock x:Name="lbxCap" Visibility="Collapsed"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Margin="40,0,40,38" MaxWidth="900"
+                   Foreground="#E2EAF2" FontSize="14"
+                   TextWrapping="Wrap" TextAlignment="Center"/>
+        <TextBlock Text="(Klick oder ESC zum Schliessen)"
+                   HorizontalAlignment="Right" VerticalAlignment="Top"
+                   Margin="0,16,24,0" Foreground="#7C9AB8" FontSize="11"/>
+    </Grid>
+</Window>
+'@
+    $r              = New-Object System.Xml.XmlNodeReader($LbxXaml)
+    $Script:lbxWin  = [System.Windows.Markup.XamlReader]::Load($r)
+    $Script:lbxWin.Owner = $Script:window
+
+    $lbxImg  = $Script:lbxWin.FindName("lbxImg")
+    $lbxCap  = $Script:lbxWin.FindName("lbxCap")
+    $lbxRoot = $Script:lbxWin.FindName("root")
+
+    try {
+        $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bmp.BeginInit()
+        $bmp.UriSource   = New-Object System.Uri($ImagePath)
+        $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bmp.EndInit()
+        $lbxImg.Source = $bmp
+    } catch { return }
+
+    if ($Caption) {
+        $lbxCap.Text = $Caption
+        $lbxCap.Visibility = "Visible"
+    }
+
+    $lbxRoot.Add_MouseLeftButtonDown({ $Script:lbxWin.Close() })
+    $Script:lbxWin.Add_KeyDown({
+        if ($args[1].Key -eq [System.Windows.Input.Key]::Escape) {
+            $Script:lbxWin.Close()
+        }
+    })
+
+    $Script:lbxWin.ShowDialog() | Out-Null
+}
+
+# ---------------------------------------------------------------------------
 # Tool-Liste aufbauen (Col 2)
 # ---------------------------------------------------------------------------
 
@@ -622,19 +681,32 @@ function Show-ToolDetails {
     # Bilder-Galerie
     $Script:imageGallery.Children.Clear()
     if ($Tool.images -and $Tool.images.Count -gt 0) {
-        foreach ($imgPath in $Tool.images) {
-            $full   = if ([System.IO.Path]::IsPathRooted($imgPath)) { $imgPath } `
-                      else { Join-Path $Script:ScriptDir $imgPath }
+        foreach ($entry in $Tool.images) {
+            if ($entry -is [string]) {
+                $imgPath = $entry
+                $imgCap  = ""
+            } else {
+                $imgPath = $entry.path
+                $imgCap  = if ($entry.caption) { $entry.caption } else { "" }
+            }
+            $full = if ([System.IO.Path]::IsPathRooted($imgPath)) { $imgPath } `
+                    else { Join-Path $Script:ScriptDir $imgPath }
+
+            $container = New-Object System.Windows.Controls.StackPanel
+            $container.Margin = New-Object System.Windows.Thickness(0, 0, 14, 14)
+            $container.Width  = 360
+
             $border = New-Object System.Windows.Controls.Border
-            $border.Margin          = New-Object System.Windows.Thickness(0, 0, 12, 12)
             $border.BorderThickness = New-Object System.Windows.Thickness(1)
             $border.BorderBrush     = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#CBD5E1")
             $border.CornerRadius    = New-Object System.Windows.CornerRadius(4)
+
+            $clickable = $false
             if (Test-Path $full) {
                 try {
                     $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
                     $bmp.BeginInit()
-                    $bmp.UriSource = New-Object System.Uri($full)
+                    $bmp.UriSource   = New-Object System.Uri($full)
                     $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
                     $bmp.EndInit()
                     $img            = New-Object System.Windows.Controls.Image
@@ -643,21 +715,45 @@ function Show-ToolDetails {
                     $img.MaxHeight  = 260
                     $img.Stretch    = "Uniform"
                     $border.Child   = $img
+                    $clickable      = $true
                 } catch {
                     $tb = New-Object System.Windows.Controls.TextBlock
-                    $tb.Text = "[Bild konnte nicht geladen werden]"
+                    $tb.Text       = "[Bild konnte nicht geladen werden]"
                     $tb.Foreground = "#94A3B8"
-                    $tb.Margin = New-Object System.Windows.Thickness(10, 6, 10, 6)
-                    $border.Child = $tb
+                    $tb.Margin     = New-Object System.Windows.Thickness(10, 6, 10, 6)
+                    $border.Child  = $tb
                 }
             } else {
                 $tb = New-Object System.Windows.Controls.TextBlock
-                $tb.Text = "[Nicht gefunden: $imgPath]"
+                $tb.Text       = "[Nicht gefunden: $imgPath]"
                 $tb.Foreground = "#94A3B8"
-                $tb.Margin = New-Object System.Windows.Thickness(10, 6, 10, 6)
-                $border.Child = $tb
+                $tb.Margin     = New-Object System.Windows.Thickness(10, 6, 10, 6)
+                $border.Child  = $tb
             }
-            $Script:imageGallery.Children.Add($border) | Out-Null
+
+            if ($clickable) {
+                $border.Cursor = [System.Windows.Input.Cursors]::Hand
+                $border.Tag    = [PSCustomObject]@{ Path = $full; Caption = $imgCap }
+                $border.Add_MouseLeftButtonDown({
+                    $data = $args[0].Tag
+                    Show-ImageLightbox -ImagePath $data.Path -Caption $data.Caption
+                })
+            }
+            $container.Children.Add($border) | Out-Null
+
+            if ($imgCap) {
+                $capBlock              = New-Object System.Windows.Controls.TextBlock
+                $capBlock.Text         = $imgCap
+                $capBlock.Foreground   = "#475569"
+                $capBlock.FontSize     = 11
+                $capBlock.FontStyle    = "Italic"
+                $capBlock.Margin       = New-Object System.Windows.Thickness(2, 5, 2, 0)
+                $capBlock.TextWrapping = "Wrap"
+                $capBlock.TextAlignment = "Center"
+                $container.Children.Add($capBlock) | Out-Null
+            }
+
+            $Script:imageGallery.Children.Add($container) | Out-Null
         }
         $Script:imageGallery.Visibility = "Visible"
     } else {
@@ -754,7 +850,7 @@ function Show-SettingsDialog {
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Einstellungen &#8211; Tools verwalten"
-        Height="720" Width="860"
+        Height="780" Width="860"
         WindowStartupLocation="CenterOwner"
         FontFamily="Segoe UI"
         Background="#F8FAFC">
@@ -891,7 +987,7 @@ function Show-SettingsDialog {
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Consolas" FontSize="12"/>
 
-                <TextBlock Style="{StaticResource Lbl}" Text="Bilder (Pfade)"/>
+                <TextBlock Style="{StaticResource Lbl}" Text="Bilder"/>
                 <ListBox x:Name="lstImages" Height="80" FontSize="12"
                          BorderBrush="#CBD5E1" BorderThickness="1"/>
                 <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -902,6 +998,9 @@ function Show-SettingsDialog {
                             Style="{StaticResource Btn}" Background="#EF4444"
                             Margin="8,0,0,0" Padding="10,5"/>
                 </StackPanel>
+                <TextBlock Style="{StaticResource Lbl}" Text="Bildbeschreibung (fuer ausgewaehltes Bild)"/>
+                <TextBox x:Name="txtImageCaption" Style="{StaticResource Txt}"
+                         IsEnabled="False"/>
 
                 <TextBlock Style="{StaticResource Lbl}" Text="Beschreibung (kurz, optional)"/>
                 <TextBox x:Name="txtDesc" Style="{StaticResource Txt}"
@@ -947,16 +1046,27 @@ function Show-SettingsDialog {
     $sLstImg    = $sWin.FindName("lstImages")
     $sBtnAddImg = $sWin.FindName("btnAddImage")
     $sBtnRmImg  = $sWin.FindName("btnRemoveImage")
+    $sTxtImgCap = $sWin.FindName("txtImageCaption")
     $sTxtDsc    = $sWin.FindName("txtDesc")
 
     $Script:dlgTools  = [System.Collections.ArrayList]@()
     foreach ($t in (Load-Tools)) { $Script:dlgTools.Add($t) | Out-Null }
     $Script:dlgSelIdx = -1
+    $Script:dlgImages = [System.Collections.ArrayList]@()
 
     function S-RefreshList {
         $sLst.Items.Clear()
         foreach ($t in $Script:dlgTools) {
             $sLst.Items.Add("$($t.icon)  $($t.name)") | Out-Null
+        }
+    }
+
+    function S-RefreshImageList {
+        $sLstImg.Items.Clear()
+        foreach ($img in $Script:dlgImages) {
+            $name = [System.IO.Path]::GetFileName($img.path)
+            $cap  = if ($img.caption) { "  -  $($img.caption)" } else { "" }
+            $sLstImg.Items.Add("$name$cap") | Out-Null
         }
     }
 
@@ -978,7 +1088,10 @@ function Show-SettingsDialog {
         $sDpDate.SelectedDate  = $null
         $sTxtDoc.Text          = ""
         $sTxtDsc.Text          = ""
+        $Script:dlgImages.Clear()
         $sLstImg.Items.Clear()
+        $sTxtImgCap.Text       = ""
+        $sTxtImgCap.IsEnabled  = $false
         $sCmbTyp.SelectedIndex = 0
         S-UpdatePathLabel
         $Script:dlgSelIdx      = -1
@@ -996,8 +1109,20 @@ function Show-SettingsDialog {
         if ($t.versionDate -and $t.versionDate -ne "") {
             try { $sDpDate.SelectedDate = [datetime]::Parse($t.versionDate) } catch { $sDpDate.SelectedDate = $null }
         } else { $sDpDate.SelectedDate = $null }
-        $sLstImg.Items.Clear()
-        if ($t.images) { foreach ($img in $t.images) { $sLstImg.Items.Add($img) | Out-Null } }
+        $Script:dlgImages.Clear()
+        if ($t.images) {
+            foreach ($img in $t.images) {
+                if ($img -is [string]) {
+                    $Script:dlgImages.Add([PSCustomObject]@{ path = $img; caption = "" }) | Out-Null
+                } else {
+                    $cap = if ($img.caption) { $img.caption } else { "" }
+                    $Script:dlgImages.Add([PSCustomObject]@{ path = $img.path; caption = $cap }) | Out-Null
+                }
+            }
+        }
+        S-RefreshImageList
+        $sTxtImgCap.Text      = ""
+        $sTxtImgCap.IsEnabled = $false
         $sCmbTyp.SelectedIndex = switch ($t.type) { "hta" { 1 } "web" { 2 } default { 0 } }
         S-UpdatePathLabel
         $sTxtPth.Text = if ($t.type -eq "web") { $t.url } else { $t.path }
@@ -1029,12 +1154,41 @@ function Show-SettingsDialog {
         $ofd = New-Object System.Windows.Forms.OpenFileDialog
         $ofd.Filter = "Bilder (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
         $ofd.Title  = "Bild auswaehlen"
-        if ($ofd.ShowDialog() -eq "OK") { $sLstImg.Items.Add($ofd.FileName) | Out-Null }
+        if ($ofd.ShowDialog() -eq "OK") {
+            $Script:dlgImages.Add(
+                [PSCustomObject]@{ path = $ofd.FileName; caption = "" }) | Out-Null
+            S-RefreshImageList
+            $sLstImg.SelectedIndex = $Script:dlgImages.Count - 1
+        }
     })
 
     $sBtnRmImg.Add_Click({
-        if ($sLstImg.SelectedIndex -ge 0) {
-            $sLstImg.Items.RemoveAt($sLstImg.SelectedIndex)
+        $i = $sLstImg.SelectedIndex
+        if ($i -ge 0 -and $i -lt $Script:dlgImages.Count) {
+            $Script:dlgImages.RemoveAt($i)
+            S-RefreshImageList
+            $sTxtImgCap.Text      = ""
+            $sTxtImgCap.IsEnabled = $false
+        }
+    })
+
+    $sLstImg.Add_SelectionChanged({
+        $i = $sLstImg.SelectedIndex
+        if ($i -ge 0 -and $i -lt $Script:dlgImages.Count) {
+            $sTxtImgCap.Text      = $Script:dlgImages[$i].caption
+            $sTxtImgCap.IsEnabled = $true
+        } else {
+            $sTxtImgCap.Text      = ""
+            $sTxtImgCap.IsEnabled = $false
+        }
+    })
+
+    $sTxtImgCap.Add_LostFocus({
+        $i = $sLstImg.SelectedIndex
+        if ($i -ge 0 -and $i -lt $Script:dlgImages.Count) {
+            $Script:dlgImages[$i].caption = $sTxtImgCap.Text
+            S-RefreshImageList
+            $sLstImg.SelectedIndex = $i
         }
     })
 
@@ -1082,8 +1236,18 @@ function Show-SettingsDialog {
                    ForEach-Object { $_.Trim() } |
                    Where-Object   { $_ -ne "" }
 
+        # Aktuelle Caption uebernehmen falls Fokus noch im Textfeld
+        $iSel = $sLstImg.SelectedIndex
+        if ($iSel -ge 0 -and $iSel -lt $Script:dlgImages.Count) {
+            $Script:dlgImages[$iSel].caption = $sTxtImgCap.Text
+        }
         $rawImgs = [System.Collections.ArrayList]@()
-        foreach ($img in $sLstImg.Items) { $rawImgs.Add($img) | Out-Null }
+        foreach ($img in $Script:dlgImages) {
+            $rawImgs.Add([PSCustomObject]@{
+                path    = $img.path
+                caption = $img.caption
+            }) | Out-Null
+        }
 
         $vDate = if ($sDpDate.SelectedDate) {
             $sDpDate.SelectedDate.ToString("yyyy-MM-dd") } else { "" }
