@@ -2,6 +2,7 @@
     "tools":  [
                   {
                       "id":  "beispiel_web",
+<<<<<<< Updated upstream
                       "name":  "Beispiel Webanwendung",
                       "type":  "web",
                       "icon":  "WEB",
@@ -105,6 +106,21 @@
 
                                  ],
                       "url":  "https://vegz/wiki/doku.php?id=systemer:intern:inhalt"
+=======
+                      "name":  "Beispiel Web",
+                      "type":  "web",
+                      "icon":  "?",
+                      "description":  "Beispiel-Webanwendung",
+                      "url":  "https://www.example.com"
+                  },
+                  {
+                      "id":  "beispiel_ps",
+                      "name":  "Beispiel Skript",
+                      "type":  "powershell",
+                      "icon":  "?",
+                      "description":  "Beispiel PowerShell-Skript",
+                      "path":  "C:\\\\Beispiel\\\\Skript.hta"
+>>>>>>> Stashed changes
                   }
               ]
 }
