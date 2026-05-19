@@ -362,22 +362,21 @@ function Filter-Tools {
                     Style="{StaticResource HomeButton}"
                     Content="&#127968;  Startseite"/>
 
-            <StackPanel DockPanel.Dock="Bottom">
-                <Button x:Name="btnSettings"
-                        Style="{StaticResource BottomNavButton}"
-                        Content="&#9881;  Einstellungen"/>
-                <Border Background="#0A1822" BorderBrush="#1A3347" BorderThickness="0,1,0,0"
-                        Padding="0,8,0,8">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="btnHelpMini"
-                                Style="{StaticResource IconNavButton}"
-                                Content="&#10068;" ToolTip="Hilfe"/>
-                        <Button x:Name="btnChangesMini"
-                                Style="{StaticResource IconNavButton}"
-                                Content="&#128221;" ToolTip="&#196;nderungsprotokoll"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <Border DockPanel.Dock="Bottom"
+                    Background="#0A1822" BorderBrush="#1A3347"
+                    BorderThickness="0,1,0,0" Padding="0,10,0,10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="btnSettings"
+                            Style="{StaticResource IconNavButton}"
+                            Content="&#9881;" ToolTip="Einstellungen"/>
+                    <Button x:Name="btnHelpMini"
+                            Style="{StaticResource IconNavButton}"
+                            Content="&#10068;" ToolTip="Hilfe"/>
+                    <Button x:Name="btnChangesMini"
+                            Style="{StaticResource IconNavButton}"
+                            Content="&#128221;" ToolTip="&#196;nderungsprotokoll"/>
+                </StackPanel>
+            </Border>
 
             <ListBox x:Name="modeList" Background="Transparent"
                      BorderThickness="0" Margin="0,10,0,0">
