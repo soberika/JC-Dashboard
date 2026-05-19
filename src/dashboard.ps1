@@ -162,8 +162,7 @@ function Apply-Theme {
     $palette = if ($Mode -eq "dark") { $Script:DarkPalette } else { $Script:LightPalette }
     $conv = [System.Windows.Media.BrushConverter]::new()
     foreach ($key in $palette.Keys) {
-        $brush = New-Object System.Windows.Media.SolidColorBrush(
-            $conv.ConvertFromString($palette[$key]))
+        $brush = $conv.ConvertFromString($palette[$key])
         $brush.Freeze()
         $Script:window.Resources[$key] = $brush
     }
