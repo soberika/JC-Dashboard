@@ -3,6 +3,13 @@
 Hier landen alle wichtigen Aenderungen am JC Dashboard.
 Eintraege koennen ueber den Knopf **Bearbeiten** direkt in der App erweitert oder im Texteditor in `src/changes.md` gepflegt werden.
 
+## 2026-05-19 (Hilfe-Bibliothek)
+- **Hilfe-Hub** mit Sidebar: Hilfe-Dialog verwaltet jetzt beliebig viele Markdown-Dokumente unter `src/help/` statt nur einer einzelnen Datei.
+- **Sidebar-Aktionen**: **+ Neu**, **Umbenennen** und **Loeschen** direkt im Hilfe-Dialog; Suchfeld filtert die Dokumentliste live.
+- **Reihenfolge** ueber Dateinamen-Praefix steuerbar (`01_`, `02_`, ...).
+- **Migration**: vorhandene `src/help.md` wird beim ersten Oeffnen automatisch nach `src/help/01_Uebersicht.md` uebernommen.
+- Beispiel-Docs ausgeliefert: `01_Uebersicht`, `02_Hilfe-Bibliothek`, `03_Eigene Notizen`.
+
 ## 2026-05-19
 - **Dark-Mode-Switch** unten in Col1: schaltet zwischen Light- und Dark-Palette um, Praeferenz wird in `prefs.json` gespeichert.
 - **Fix Dark-Mode**: `Apply-Theme` rief faelschlich `SolidColorBrush(Color)` mit einem `SolidColorBrush`-Argument auf - jetzt wird das vom `BrushConverter` zurueckgegebene Brush direkt verwendet.
