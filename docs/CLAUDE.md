@@ -29,6 +29,7 @@ JC-Dashboard/
 │   ├── tools.json             # Tool-Konfiguration (wird von der GUI gelesen/geschrieben)
 │   ├── usage.json             # Nutzungs-Historie für "Zuletzt verwendet"
 │   ├── help.md                # Inhalt des Hilfe-Dialogs (in der App editierbar)
+│   ├── changes.md             # Aenderungsprotokoll (in der App editierbar)
 │   └── Start-Dashboard.ps1    # Einstiegs-Skript → Rechtsklick "Mit PowerShell ausführen"
 ├── assets/                    # Bilder, Icons (optional)
 ├── docs/
@@ -92,9 +93,11 @@ JC-Dashboard/
 }
 ```
 
-### Hilfe-Datei (`help.md`)
-- Liegt unter `src/help.md` und wird vom Hilfe-Dialog gelesen/geschrieben.
-- Falls die Datei fehlt, wird sie aus `$Script:DefaultHelpText` in `dashboard.ps1` neu angelegt.
+### Markdown-Dokumente (`help.md`, `changes.md`)
+- Beide liegen unter `src/` und werden vom generischen `Show-MarkdownDocDialog` gelesen/geschrieben.
+- `help.md` → Hilfe-Dialog (Button **„❔ Hilfe öffnen"** auf der Startseite).
+- `changes.md` → Änderungsprotokoll-Dialog (Button **„📝 Änderungen"** auf der Startseite).
+- Falls eine Datei fehlt, wird sie aus `$Script:DefaultHelpText` bzw. `$Script:DefaultChangesText` in `dashboard.ps1` neu angelegt.
 - Im Dialog: **Bearbeiten** öffnet einen Markdown-Editor, **Speichern** persistiert und rendert neu.
 
 ---

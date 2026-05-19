@@ -8,6 +8,7 @@ $Script:ScriptDir        = $PSScriptRoot
 $Script:ToolsFile        = Join-Path $Script:ScriptDir "tools.json"
 $Script:UsageFile        = Join-Path $Script:ScriptDir "usage.json"
 $Script:HelpFile         = Join-Path $Script:ScriptDir "help.md"
+$Script:ChangesFile      = Join-Path $Script:ScriptDir "changes.md"
 $Script:CurrentMode      = "recent"
 $Script:IgnoreModeChange = $false
 
@@ -23,6 +24,13 @@ Das **JC Dashboard** buendelt PowerShell-Skripte, HTA-Anwendungen und Webseiten 
 
 ## Diese Hilfe anpassen
 Im Hilfe-Dialog auf **Bearbeiten** klicken, Text aendern und **Speichern** druecken.
+'@
+
+$Script:DefaultChangesText = @'
+# Aenderungsprotokoll
+
+Hier landen alle wichtigen Aenderungen am JC Dashboard.
+Neue Eintraege bitte mit Datum (`## YYYY-MM-DD`) ueberschreiben.
 '@
 
 # ---------------------------------------------------------------------------
@@ -70,23 +78,24 @@ function Save-Usage {
         Set-Content -Path $Script:UsageFile -Encoding UTF8
 }
 
-function Load-HelpDoc {
-    if (-not (Test-Path $Script:HelpFile)) {
-        try { $Script:DefaultHelpText | Set-Content -Path $Script:HelpFile -Encoding UTF8 } catch {}
-        return $Script:DefaultHelpText
+function Load-MarkdownDoc {
+    param([string]$File, [string]$Default)
+    if (-not (Test-Path $File)) {
+        try { $Default | Set-Content -Path $File -Encoding UTF8 } catch {}
+        return $Default
     }
-    try { return (Get-Content $Script:HelpFile -Raw -Encoding UTF8) }
-    catch { return $Script:DefaultHelpText }
+    try { return (Get-Content $File -Raw -Encoding UTF8) }
+    catch { return $Default }
 }
 
-function Save-HelpDoc {
-    param([string]$Text)
+function Save-MarkdownDoc {
+    param([string]$File, [string]$Text)
     try {
-        $Text | Set-Content -Path $Script:HelpFile -Encoding UTF8
+        $Text | Set-Content -Path $File -Encoding UTF8
         return $true
     } catch {
         [System.Windows.MessageBox]::Show(
-            "Hilfe konnte nicht gespeichert werden:`n$_", "Fehler",
+            "Datei konnte nicht gespeichert werden:`n$_", "Fehler",
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Warning) | Out-Null
         return $false
@@ -373,10 +382,15 @@ function Filter-Tools {
                            TextWrapping="Wrap" TextAlignment="Center"
                            Margin="20,4,20,22"
                            Text="Tipp: &#252;ber 'Hilfe &#246;ffnen' findest du eine kurze Anleitung - die du selbst erg&#228;nzen kannst."/>
-                <Button x:Name="btnHelp"
-                        Style="{StaticResource HelpButton}"
-                        HorizontalAlignment="Center"
-                        Content="&#10068;  Hilfe &#246;ffnen"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="btnHelp"
+                            Style="{StaticResource HelpButton}"
+                            Content="&#10068;  Hilfe &#246;ffnen"/>
+                    <Button x:Name="btnChanges"
+                            Style="{StaticResource HelpButton}"
+                            Margin="10,0,0,0"
+                            Content="&#128221;  &#196;nderungen"/>
+                </StackPanel>
             </StackPanel>
 
             <!-- Details -->
@@ -440,6 +454,7 @@ $Script:imageGallery     = $Script:window.FindName("imageGallery")
 $Script:btnStartTool     = $Script:window.FindName("btnStartTool")
 $Script:btnHome          = $Script:window.FindName("btnHome")
 $Script:btnHelp          = $Script:window.FindName("btnHelp")
+$Script:btnChanges       = $Script:window.FindName("btnChanges")
 
 # ---------------------------------------------------------------------------
 # Markdown -> FlowDocument
@@ -910,15 +925,21 @@ function Start-Tool {
 }
 
 # ---------------------------------------------------------------------------
-# Hilfe-Dialog
+# Markdown-Dokument-Dialog (Hilfe / Aenderungen)
 # ---------------------------------------------------------------------------
 
-function Show-HelpDialog {
+function Show-MarkdownDocDialog {
+    param(
+        [string]$Title    = "Dokument",
+        [string]$Subtitle = "Dokument",
+        [string]$File,
+        [string]$Default  = ""
+    )
 
-    [xml]$HXaml = @'
+    [xml]$HXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Hilfe &#8211; JC Dashboard"
+        Title="$Title"
         Height="640" Width="820"
         WindowStartupLocation="CenterOwner"
         FontFamily="Segoe UI"
@@ -964,7 +985,7 @@ function Show-HelpDialog {
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Text="JC Dashboard &#8211; Hilfe"
+                <TextBlock Text="$Subtitle"
                            FontWeight="SemiBold" FontSize="16"
                            Foreground="#1A3347"/>
                 <TextBlock x:Name="hHint"
@@ -1012,7 +1033,7 @@ function Show-HelpDialog {
         </StackPanel>
     </Grid>
 </Window>
-'@
+"@
 
     $hr           = New-Object System.Xml.XmlNodeReader($HXaml)
     $hWin         = [System.Windows.Markup.XamlReader]::Load($hr)
@@ -1027,12 +1048,15 @@ function Show-HelpDialog {
     $hBtnClose    = $hWin.FindName("hBtnClose")
     $hHint        = $hWin.FindName("hHint")
 
-    $renderHelp = {
-        $txt = Load-HelpDoc
+    $docFile    = $File
+    $docDefault = $Default
+
+    $renderDoc = {
+        $txt = Load-MarkdownDoc -File $docFile -Default $docDefault
         $hViewer.Document = Convert-MarkdownToFlowDocument -Text $txt
         $hEditor.Text     = $txt
     }
-    & $renderHelp
+    & $renderDoc
 
     $enterEdit = {
         $hViewBorder.Visibility = "Collapsed"
@@ -1040,7 +1064,7 @@ function Show-HelpDialog {
         $hBtnEdit.Visibility    = "Collapsed"
         $hBtnSave.Visibility    = "Visible"
         $hBtnCancel.Visibility  = "Visible"
-        $hHint.Text             = "Bearbeiten &#8211; Markdown wird beim Speichern wieder formatiert dargestellt."
+        $hHint.Text             = "Bearbeiten - Markdown wird beim Speichern wieder formatiert dargestellt."
         $hEditor.Focus() | Out-Null
     }
 
@@ -1056,20 +1080,36 @@ function Show-HelpDialog {
     $hBtnEdit.Add_Click({ & $enterEdit })
 
     $hBtnSave.Add_Click({
-        if (Save-HelpDoc -Text $hEditor.Text) {
-            & $renderHelp
+        if (Save-MarkdownDoc -File $docFile -Text $hEditor.Text) {
+            & $renderDoc
             & $exitEdit
         }
     })
 
     $hBtnCancel.Add_Click({
-        $hEditor.Text = Load-HelpDoc
+        $hEditor.Text = Load-MarkdownDoc -File $docFile -Default $docDefault
         & $exitEdit
     })
 
     $hBtnClose.Add_Click({ $hWin.Close() })
 
     $hWin.ShowDialog() | Out-Null
+}
+
+function Show-HelpDialog {
+    Show-MarkdownDocDialog `
+        -Title    "Hilfe - JC Dashboard" `
+        -Subtitle "JC Dashboard - Hilfe" `
+        -File     $Script:HelpFile `
+        -Default  $Script:DefaultHelpText
+}
+
+function Show-ChangesDialog {
+    Show-MarkdownDocDialog `
+        -Title    "Aenderungsprotokoll - JC Dashboard" `
+        -Subtitle "JC Dashboard - Aenderungen" `
+        -File     $Script:ChangesFile `
+        -Default  $Script:DefaultChangesText
 }
 
 # ---------------------------------------------------------------------------
@@ -1621,6 +1661,8 @@ $Script:btnHome.Add_Click({
 })
 
 $Script:btnHelp.Add_Click({ Show-HelpDialog })
+
+$Script:btnChanges.Add_Click({ Show-ChangesDialog })
 
 # ---------------------------------------------------------------------------
 # Start

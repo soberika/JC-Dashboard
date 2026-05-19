@@ -24,6 +24,7 @@ Das Dashboard dient als **Launcher und zentrale Übersicht**, nicht als Ersatz f
 - **Detail-Ansicht** mit Tags, Version, Markdown-Doku und Bilder-Galerie (Klick = Lightbox)
 - **Einstellungen-Dialog**: Tools hinzufügen, bearbeiten, löschen — inkl. Tags, Version, Doku, Bildern
 - **Hilfe-Dialog** mit gerendertem Markdown, direkt in der App **bearbeitbar und speicherbar** (`src/help.md`)
+- **Änderungsprotokoll-Dialog** (`src/changes.md`), ebenfalls in der App editierbar
 - **Werkseinstellungen**: setzt alle Tools auf Beispiel-Einträge zurück (mit Bestätigungsdialog)
 - Konfiguration komplett über `src/tools.json` — kein Code-Änderung nötig
 
@@ -87,14 +88,14 @@ Tools werden in `src/tools.json` gespeichert. Das Format:
 
 ---
 
-## Hilfe (`help.md`)
+## Hilfe & Änderungsprotokoll (`help.md`, `changes.md`)
 
-Der Inhalt des Hilfe-Dialogs liegt in `src/help.md` und kann auf zwei Arten gepflegt werden:
+Beide Inhalte liegen als Markdown-Dateien neben der `dashboard.ps1` und können auf zwei Arten gepflegt werden:
 
 - direkt im Texteditor öffnen und speichern, **oder**
-- in der App: Welcome-Pane → **Hilfe öffnen** → **Bearbeiten** → Text ändern → **Speichern**.
+- in der App: Welcome-Pane → **Hilfe öffnen** bzw. **Änderungen** → **Bearbeiten** → Text ändern → **Speichern**.
 
-Die Hilfe unterstützt einfaches Markdown (`# Überschrift`, `**fett**`, Listen, `[Link](https://...)`).
+Unterstützt wird einfaches Markdown (`# Überschrift`, `**fett**`, Listen, `[Link](https://...)`).
 
 ---
 
@@ -107,6 +108,7 @@ JC-Dashboard/
 │   ├── tools.json           # Tool-Konfiguration
 │   ├── usage.json           # Historie für "Zuletzt verwendet"
 │   ├── help.md              # Inhalt des Hilfe-Dialogs (editierbar in der App)
+│   ├── changes.md           # Aenderungsprotokoll (editierbar in der App)
 │   └── Start-Dashboard.ps1  # Starter
 ├── assets/                  # Bilder, Screenshots
 ├── docs/
