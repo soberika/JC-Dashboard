@@ -17,6 +17,7 @@ Das Dashboard dient als **Launcher und zentrale Übersicht**, nicht als Ersatz f
 
 - **3-Spalten-Layout**: Modus-Auswahl, Tool-Liste, Detail-Pane
 - **Startseite-Button** oben links mit Willkommens-Pane und Hilfe-Zugang
+- **Bottom-Icon-Bar** in der Sidebar mit ⚙ Einstellungen, ❔ Hilfe, 📝 Änderungen und ☾/☀ Theme-Toggle
 - **Zuletzt verwendet** zeigt die fünf zuletzt gestarteten Tools (persistiert in `usage.json`)
 - **Alle Tools (A-Z)** mit Suchfeld über Name, Tags, Beschreibung und Doku
 - **PowerShell-** und **HTA-Tools** starten per `Start-Process`; Fehlermeldung wenn die Datei nicht gefunden wird

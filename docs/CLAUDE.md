@@ -46,7 +46,8 @@ JC-Dashboard/
 ### Was funktioniert
 - GUI startet via `src/Start-Dashboard.ps1` (Rechtsklick → Mit PowerShell ausführen)
 - **3-Spalten-Layout** (Inspector-Stil): Modus (Col 1) → Tool-Liste (Col 2) → Detail-Ansicht (Col 3)
-- **Startseite-Button** oben in Col 1 zeigt die Welcome-Pane mit Kurzbeschreibung und Hilfe-Button
+- **Startseite-Button** oben in Col 1 zeigt die Welcome-Pane mit Kurzbeschreibung und Hilfe-Buttons
+- **Bottom-Icon-Bar in Col 1**: kompakte Icons für ⚙ Einstellungen, ❔ Hilfe, 📝 Änderungsprotokoll und ☾/☀ Theme-Toggle (mit Tooltips)
 - Sidebar lädt Tools dynamisch aus `src/tools.json`
 - **PowerShell-Tools** (`type: "powershell"`): starten per `Start-Process`, absoluter oder relativer Pfad; Fehlermeldung wenn Datei nicht gefunden
 - **HTA-Tools** (`type: "hta"`): starten ebenfalls per `Start-Process` (Windows öffnet sie mit `mshta.exe`)
@@ -56,6 +57,8 @@ JC-Dashboard/
 - **Detail-Pane**: Tags, Version + Versionsdatum, Markdown-Doku, Bilder-Galerie mit Lightbox-Zoom
 - **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen inkl. Tags, Version, Doku, Bildern → speichert sofort in `tools.json` + aktualisiert Sidebar
 - **Hilfe-Dialog** (Pop-up): rendert `help.md` als Markdown; **Bearbeiten/Speichern** direkt in der App, Inhalt persistiert in `src/help.md`
+- **Änderungsprotokoll-Dialog**: gleicher generischer `Show-MarkdownDocDialog`, Inhalt in `src/changes.md`
+- **Dark-Mode-Switch**: ☾/☀-Icon in der Bottom-Bar; Brushes via `DynamicResource`, Apply-Theme tauscht zur Laufzeit, Auswahl in `prefs.json` persistiert
 - **Werkseinstellungen-Reset**: setzt `tools.json` auf Beispiel-Tools zurück (mit Bestätigungsdialog)
 - Fehlermeldungen (Datei nicht gefunden, JSON-Fehler, Runtime-Fehler) als MessageBox
 

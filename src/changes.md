@@ -5,6 +5,7 @@ Eintraege koennen ueber den Knopf **Bearbeiten** direkt in der App erweitert ode
 
 ## 2026-05-19
 - **Dark-Mode-Switch** unten in Col1: schaltet zwischen Light- und Dark-Palette um, Praeferenz wird in `prefs.json` gespeichert.
+- **Fix Dark-Mode**: `Apply-Theme` rief faelschlich `SolidColorBrush(Color)` mit einem `SolidColorBrush`-Argument auf - jetzt wird das vom `BrushConverter` zurueckgegebene Brush direkt verwendet.
 - **Einstellungen** als Icon-Button in die untere Bottom-Reihe von Col1 verschoben (zusammen mit Hilfe und Aenderungsprotokoll).
 - **Startseite-Button** in der linken Spalte hinzugefuegt.
 - **Welcome-Pane** mit Kurzbeschreibung und Hilfe-Zugang ueberarbeitet.
