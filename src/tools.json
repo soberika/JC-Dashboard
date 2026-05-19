@@ -71,6 +71,40 @@
                                      "C:\\temp\\__\\JC-Dashboard\\assets\\Mittagessen1_0.PNG"
                                  ],
                       "url":  "https://mittagessen.dialorsa.workers.dev/"
+                  },
+                  {
+                      "id":  "open_tools",
+                      "name":  "OPEN TOOLS",
+                      "type":  "web",
+                      "icon":  "ML",
+                      "description":  "",
+                      "tags":  [
+                                   "JC"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "Marcellos",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://vegz/open/index2.php"
+                  },
+                  {
+                      "id":  "sozial_portal",
+                      "name":  "Sozial-Portal",
+                      "type":  "web",
+                      "icon":  "ML",
+                      "description":  "",
+                      "tags":  [
+
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://vegz/wiki/doku.php?id=systemer:intern:inhalt"
                   }
               ]
 }

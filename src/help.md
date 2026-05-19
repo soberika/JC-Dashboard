@@ -1,4 +1,4 @@
-# JC Dashboard - Hilfe
+﻿# JC Dashboard - Hilfe
 
 Das **JC Dashboard** ist deine zentrale Anlaufstelle fuer wichtige Werkzeuge. Es buendelt PowerShell-Skripte, HTA-Anwendungen und Webseiten in einer aufgeraeumten Oberflaeche und merkt sich, welche Tools du zuletzt verwendet hast.
 
@@ -33,3 +33,4 @@ Backslashes muessen in JSON-Dateien doppelt geschrieben werden:
 
 ## Tipp: Werkseinstellungen
 Im Einstellungs-Dialog setzt der Button **Werkseinstellungen** alle Tools auf die mitgelieferten Beispiele zurueck - praktisch zum Ausprobieren und Testen.
+
