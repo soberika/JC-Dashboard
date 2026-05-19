@@ -27,6 +27,8 @@ JC-Dashboard/
 ├── src/
 │   ├── dashboard.ps1          # Haupt-GUI (XAML + Code-Behind)
 │   ├── tools.json             # Tool-Konfiguration (wird von der GUI gelesen/geschrieben)
+│   ├── usage.json             # Nutzungs-Historie für "Zuletzt verwendet"
+│   ├── help.md                # Inhalt des Hilfe-Dialogs (in der App editierbar)
 │   └── Start-Dashboard.ps1    # Einstiegs-Skript → Rechtsklick "Mit PowerShell ausführen"
 ├── assets/                    # Bilder, Icons (optional)
 ├── docs/
@@ -41,11 +43,18 @@ JC-Dashboard/
 
 ### Was funktioniert
 - GUI startet via `src/Start-Dashboard.ps1` (Rechtsklick → Mit PowerShell ausführen)
+- **3-Spalten-Layout** (Inspector-Stil): Modus (Col 1) → Tool-Liste (Col 2) → Detail-Ansicht (Col 3)
+- **Startseite-Button** oben in Col 1 zeigt die Welcome-Pane mit Kurzbeschreibung und Hilfe-Button
 - Sidebar lädt Tools dynamisch aus `src/tools.json`
 - **PowerShell-Tools** (`type: "powershell"`): starten per `Start-Process`, absoluter oder relativer Pfad; Fehlermeldung wenn Datei nicht gefunden
+- **HTA-Tools** (`type: "hta"`): starten ebenfalls per `Start-Process` (Windows öffnet sie mit `mshta.exe`)
 - **Web-Tools** (`type: "web"`): öffnen URL im Standard-Browser des Systems per `Start-Process`
-- **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen → speichert sofort in `tools.json` + aktualisiert Sidebar
-- **Werkseinstellungen-Reset**: setzt `tools.json` auf zwei Beispiel-Tools zurück (mit Bestätigungsdialog)
+- **Zuletzt verwendet**: zeigt die fünf zuletzt gestarteten Tools, persistiert in `usage.json`
+- **Alle Tools (A-Z)** mit Suchfeld über Name, Tags, Beschreibung und Doku
+- **Detail-Pane**: Tags, Version + Versionsdatum, Markdown-Doku, Bilder-Galerie mit Lightbox-Zoom
+- **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen inkl. Tags, Version, Doku, Bildern → speichert sofort in `tools.json` + aktualisiert Sidebar
+- **Hilfe-Dialog** (Pop-up): rendert `help.md` als Markdown; **Bearbeiten/Speichern** direkt in der App, Inhalt persistiert in `src/help.md`
+- **Werkseinstellungen-Reset**: setzt `tools.json` auf Beispiel-Tools zurück (mit Bestätigungsdialog)
 - Fehlermeldungen (Datei nicht gefunden, JSON-Fehler, Runtime-Fehler) als MessageBox
 
 ### Bekannte Einschränkungen
@@ -60,9 +69,16 @@ JC-Dashboard/
       "id":          "eindeutiger_bezeichner",
       "name":        "Anzeigename",
       "type":        "powershell",
-      "path":        "C:\\absoluter\\oder\\relativer\\Pfad.hta",
+      "path":        "C:\\absoluter\\oder\\relativer\\Pfad.ps1",
       "icon":        "?",
-      "description": "Kurzbeschreibung"
+      "description": "Kurzbeschreibung",
+      "tags":        ["Demo", "Info"],
+      "version":     "1.0.0",
+      "versionDate": "2026-01-15",
+      "doc":         "# Markdown-Doku\n\nUnterstuetzt **Fett**, Listen, Links.",
+      "images":      [
+        { "path": "assets\\screenshot.png", "caption": "Hauptansicht" }
+      ]
     },
     {
       "id":          "web_tool",
@@ -75,6 +91,11 @@ JC-Dashboard/
   ]
 }
 ```
+
+### Hilfe-Datei (`help.md`)
+- Liegt unter `src/help.md` und wird vom Hilfe-Dialog gelesen/geschrieben.
+- Falls die Datei fehlt, wird sie aus `$Script:DefaultHelpText` in `dashboard.ps1` neu angelegt.
+- Im Dialog: **Bearbeiten** öffnet einen Markdown-Editor, **Speichern** persistiert und rendert neu.
 
 ---
 
