@@ -231,6 +231,57 @@ function Filter-Tools {
             </Setter>
         </Style>
 
+        <Style x:Key="BottomNavButton" TargetType="Button" BasedOn="{StaticResource HomeButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="#1A3347" BorderThickness="0,1,0,0">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#162A3A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1A3347"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IconNavButton" TargetType="Button">
+            <Setter Property="Background" Value="#0D1F2D"/>
+            <Setter Property="Foreground" Value="#7C9AB8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Margin" Value="4,0,4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1A3347"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1E4A6E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="HelpButton" TargetType="Button">
             <Setter Property="Background" Value="#E2EAF2"/>
             <Setter Property="Foreground" Value="#1A3347"/>
@@ -310,14 +361,30 @@ function Filter-Tools {
             <Button DockPanel.Dock="Top" x:Name="btnHome"
                     Style="{StaticResource HomeButton}"
                     Content="&#127968;  Startseite"/>
+
+            <StackPanel DockPanel.Dock="Bottom">
+                <Button x:Name="btnSettings"
+                        Style="{StaticResource BottomNavButton}"
+                        Content="&#9881;  Einstellungen"/>
+                <Border Background="#0A1822" BorderBrush="#1A3347" BorderThickness="0,1,0,0"
+                        Padding="0,8,0,8">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button x:Name="btnHelpMini"
+                                Style="{StaticResource IconNavButton}"
+                                Content="&#10068;" ToolTip="Hilfe"/>
+                        <Button x:Name="btnChangesMini"
+                                Style="{StaticResource IconNavButton}"
+                                Content="&#128221;" ToolTip="&#196;nderungsprotokoll"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
             <ListBox x:Name="modeList" Background="Transparent"
                      BorderThickness="0" Margin="0,10,0,0">
                 <ListBoxItem Style="{StaticResource ModeItem}" Tag="recent"
                              Content="Zuletzt verwendet"/>
                 <ListBoxItem Style="{StaticResource ModeItem}" Tag="all"
                              Content="Alle Tools (A-Z)"/>
-                <ListBoxItem Style="{StaticResource ModeItem}" Tag="settings"
-                             Content="&#9881;  Einstellungen"/>
             </ListBox>
         </DockPanel>
 
@@ -455,6 +522,9 @@ $Script:btnStartTool     = $Script:window.FindName("btnStartTool")
 $Script:btnHome          = $Script:window.FindName("btnHome")
 $Script:btnHelp          = $Script:window.FindName("btnHelp")
 $Script:btnChanges       = $Script:window.FindName("btnChanges")
+$Script:btnSettings      = $Script:window.FindName("btnSettings")
+$Script:btnHelpMini      = $Script:window.FindName("btnHelpMini")
+$Script:btnChangesMini   = $Script:window.FindName("btnChangesMini")
 
 # ---------------------------------------------------------------------------
 # Markdown -> FlowDocument
@@ -1609,21 +1679,7 @@ $Script:modeList.Add_SelectionChanged({
     if ($Script:IgnoreModeChange) { return }
     $item = $Script:modeList.SelectedItem
     if (-not $item) { return }
-    $mode = $item.Tag
-
-    if ($mode -eq "settings") {
-        $Script:IgnoreModeChange = $true
-        $Script:modeList.SelectedIndex = -1
-        $Script:IgnoreModeChange = $false
-        Show-SettingsDialog
-        Build-ToolList -Mode $Script:CurrentMode
-        $Script:IgnoreModeChange = $true
-        $Script:modeList.SelectedIndex = if ($Script:CurrentMode -eq "all") { 1 } else { 0 }
-        $Script:IgnoreModeChange = $false
-        return
-    }
-
-    Build-ToolList -Mode $mode
+    Build-ToolList -Mode $item.Tag
 })
 
 $Script:toolList.Add_SelectionChanged({
@@ -1663,6 +1719,15 @@ $Script:btnHome.Add_Click({
 $Script:btnHelp.Add_Click({ Show-HelpDialog })
 
 $Script:btnChanges.Add_Click({ Show-ChangesDialog })
+
+$Script:btnHelpMini.Add_Click({ Show-HelpDialog })
+
+$Script:btnChangesMini.Add_Click({ Show-ChangesDialog })
+
+$Script:btnSettings.Add_Click({
+    Show-SettingsDialog
+    Build-ToolList -Mode $Script:CurrentMode
+})
 
 # ---------------------------------------------------------------------------
 # Start
