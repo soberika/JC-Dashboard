@@ -8,6 +8,7 @@ $Script:ScriptDir        = $PSScriptRoot
 $Script:ToolsFile        = Join-Path $Script:ScriptDir "tools.json"
 $Script:UsageFile        = Join-Path $Script:ScriptDir "usage.json"
 $Script:HelpFile         = Join-Path $Script:ScriptDir "help.md"
+$Script:HelpDir          = Join-Path $Script:ScriptDir "help"
 $Script:ChangesFile      = Join-Path $Script:ScriptDir "changes.md"
 $Script:PrefsFile        = Join-Path $Script:ScriptDir "prefs.json"
 $Script:CurrentMode      = "recent"
@@ -102,6 +103,72 @@ function Save-MarkdownDoc {
             [System.Windows.MessageBoxImage]::Warning) | Out-Null
         return $false
     }
+}
+
+# Hilfe-Bibliothek: Ordner src/help/ mit beliebig vielen .md-Dateien.
+# Dateiname (ohne .md) = Anzeigename. Reihenfolge per Praefix steuerbar (z.B. 01_, 02_).
+function Initialize-HelpDocs {
+    if (-not (Test-Path $Script:HelpDir)) {
+        try { New-Item -ItemType Directory -Path $Script:HelpDir -Force | Out-Null } catch { return }
+    }
+    $existing = @(Get-ChildItem -Path $Script:HelpDir -Filter '*.md' -File -ErrorAction SilentlyContinue)
+    if ($existing.Count -eq 0) {
+        $seed = $Script:DefaultHelpText
+        if (Test-Path $Script:HelpFile) {
+            try { $seed = Get-Content $Script:HelpFile -Raw -Encoding UTF8 } catch {}
+        }
+        $target = Join-Path $Script:HelpDir "01_Uebersicht.md"
+        try { $seed | Set-Content -Path $target -Encoding UTF8 } catch {}
+    }
+}
+
+function Get-HelpDocs {
+    if (-not (Test-Path $Script:HelpDir)) { return ,@() }
+    $items = Get-ChildItem -Path $Script:HelpDir -Filter '*.md' -File -ErrorAction SilentlyContinue |
+             Sort-Object Name
+    return @($items | ForEach-Object {
+        [PSCustomObject]@{
+            Name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+            File = $_.FullName
+        }
+    })
+}
+
+function Test-HelpDocName {
+    param([string]$Name)
+    if ([string]::IsNullOrWhiteSpace($Name)) { return $false }
+    $invalid = [System.IO.Path]::GetInvalidFileNameChars()
+    foreach ($c in $invalid) { if ($Name.IndexOf($c) -ge 0) { return $false } }
+    if ($Name.Length -gt 80) { return $false }
+    return $true
+}
+
+function New-HelpDoc {
+    param([string]$Name)
+    if (-not (Test-HelpDocName $Name)) { return $null }
+    $file = Join-Path $Script:HelpDir ($Name + ".md")
+    if (Test-Path $file) { return $null }
+    $tpl = "# $Name`r`n`r`nNeue Notiz - hier Inhalt einfuegen.`r`n"
+    try { $tpl | Set-Content -Path $file -Encoding UTF8 } catch { return $null }
+    return $file
+}
+
+function Rename-HelpDoc {
+    param([string]$OldPath, [string]$NewName)
+    if (-not (Test-HelpDocName $NewName)) { return $null }
+    $dir = Split-Path -Path $OldPath -Parent
+    $new = Join-Path $dir ($NewName + ".md")
+    if ((Test-Path $new) -and ($new -ne $OldPath)) { return $null }
+    try { Move-Item -Path $OldPath -Destination $new -Force } catch { return $null }
+    return $new
+}
+
+function Remove-HelpDoc {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        try { Remove-Item -Path $Path -Force; return $true } catch { return $false }
+    }
+    return $false
 }
 
 function Load-Prefs {
@@ -1275,13 +1342,460 @@ function Show-MarkdownDocDialog {
     $hWin.ShowDialog() | Out-Null
 }
 
-function Show-HelpDialog {
-    Show-MarkdownDocDialog `
-        -Title    "Hilfe - JC Dashboard" `
-        -Subtitle "JC Dashboard - Hilfe" `
-        -File     $Script:HelpFile `
-        -Default  $Script:DefaultHelpText
+function Show-InputDialog {
+    param(
+        [string]$Title   = "Eingabe",
+        [string]$Prompt  = "Wert eingeben:",
+        [string]$Default = ""
+    )
+
+    [xml]$IXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="$Title" Height="180" Width="440"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="Segoe UI"
+        Background="{DynamicResource AppBg}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="$Prompt"
+                   Foreground="{DynamicResource AppText}" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="1" x:Name="iText" Padding="6,5" FontSize="13"
+                 Background="{DynamicResource AppCardBg}"
+                 Foreground="{DynamicResource AppText}"
+                 CaretBrush="{DynamicResource AppText}"
+                 BorderBrush="{DynamicResource AppBorder}"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="iOk" Content="OK" Padding="20,6" Margin="0,0,8,0" IsDefault="True"/>
+            <Button x:Name="iCancel" Content="Abbrechen" Padding="14,6" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+    $ir = New-Object System.Xml.XmlNodeReader($IXaml)
+    $Script:InpWin = [System.Windows.Markup.XamlReader]::Load($ir)
+    if ($Script:window) { $Script:InpWin.Owner = $Script:window }
+    foreach ($k in @("AppBg","AppText","AppCardBg","AppBorder")) {
+        try { $Script:InpWin.Resources[$k] = $Script:window.FindResource($k) } catch {}
+    }
+    $Script:InpText  = $Script:InpWin.FindName("iText")
+    $Script:InpText.Text = $Default
+    $Script:InpText.SelectAll()
+    $Script:InpResult = $null
+    $Script:InpWin.FindName("iOk").Add_Click({
+        $Script:InpResult = $Script:InpText.Text
+        $Script:InpWin.Close()
+    })
+    $Script:InpWin.FindName("iCancel").Add_Click({
+        $Script:InpResult = $null
+        $Script:InpWin.Close()
+    })
+    $Script:InpText.Focus() | Out-Null
+    $Script:InpWin.ShowDialog() | Out-Null
+    return $Script:InpResult
 }
+
+# ---------------------------------------------------------------------------
+# Hilfe-Hub (mehrere .md-Dateien aus src/help/)
+# ---------------------------------------------------------------------------
+
+function HelpHub-Render {
+    if (-not $Script:HelpHubCurrentFile -or -not (Test-Path $Script:HelpHubCurrentFile)) {
+        $Script:HelpHubViewer.Document = New-Object System.Windows.Documents.FlowDocument
+        $Script:HelpHubEditor.Text     = ""
+        $Script:HelpHubTitle.Text      = "Kein Dokument ausgewaehlt"
+        return
+    }
+    $txt = Get-Content $Script:HelpHubCurrentFile -Raw -Encoding UTF8
+    if ($null -eq $txt) { $txt = "" }
+    $Script:HelpHubViewer.Document = Convert-MarkdownToFlowDocument -Text $txt
+    $Script:HelpHubEditor.Text     = $txt
+    $Script:HelpHubTitle.Text      = [System.IO.Path]::GetFileNameWithoutExtension($Script:HelpHubCurrentFile)
+}
+
+function HelpHub-RefreshList {
+    param([string]$SelectFile = "")
+    $docs = Get-HelpDocs
+    $filter = ""
+    if ($Script:HelpHubSearch) { $filter = $Script:HelpHubSearch.Text }
+    if ($filter) {
+        $docs = @($docs | Where-Object { $_.Name -match [regex]::Escape($filter) })
+    }
+    $Script:HelpHubDocs = $docs
+    $Script:HelpHubList.ItemsSource = $docs
+    if (-not $SelectFile -and $Script:HelpHubCurrentFile) { $SelectFile = $Script:HelpHubCurrentFile }
+    $sel = $null
+    if ($SelectFile) {
+        $sel = $docs | Where-Object { $_.File -eq $SelectFile } | Select-Object -First 1
+    }
+    if (-not $sel) { $sel = $docs | Select-Object -First 1 }
+    if ($sel) {
+        $Script:HelpHubCurrentFile = $sel.File
+        $Script:HelpHubList.SelectedItem = $sel
+    } else {
+        $Script:HelpHubCurrentFile = $null
+    }
+    HelpHub-Render
+}
+
+function HelpHub-EnterEdit {
+    $Script:HelpHubIsEditing       = $true
+    $Script:HelpHubViewBorder.Visibility = "Collapsed"
+    $Script:HelpHubEditor.Visibility     = "Visible"
+    $Script:HelpHubBtnEdit.Visibility    = "Collapsed"
+    $Script:HelpHubBtnSave.Visibility    = "Visible"
+    $Script:HelpHubBtnCancel.Visibility  = "Visible"
+    $Script:HelpHubHint.Text             = "Bearbeiten - Markdown wird beim Speichern wieder formatiert dargestellt."
+    $Script:HelpHubEditor.Focus() | Out-Null
+}
+
+function HelpHub-ExitEdit {
+    $Script:HelpHubIsEditing       = $false
+    $Script:HelpHubEditor.Visibility     = "Collapsed"
+    $Script:HelpHubViewBorder.Visibility = "Visible"
+    $Script:HelpHubBtnEdit.Visibility    = "Visible"
+    $Script:HelpHubBtnSave.Visibility    = "Collapsed"
+    $Script:HelpHubBtnCancel.Visibility  = "Collapsed"
+    $Script:HelpHubHint.Text             = "Lese-Modus - klicke auf 'Bearbeiten', um den Text zu aendern."
+}
+
+function Show-HelpHubDialog {
+    Initialize-HelpDocs
+
+    [xml]$HXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hilfe - JC Dashboard"
+        Height="680" Width="1040"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI"
+        Background="{DynamicResource AppBg}">
+
+    <Window.Resources>
+        <Style x:Key="HBtn" TargetType="Button">
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HSideBtn" TargetType="Button" BasedOn="{StaticResource HBtn}">
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style x:Key="DocItem" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppText}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="db" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="db" Property="Background" Value="{DynamicResource AppCardBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="db" Property="Background" Value="#1E6DB5"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Grid.Row="0"
+                Background="{DynamicResource AppCardBg}"
+                BorderBrush="{DynamicResource AppBorder}" BorderThickness="1"
+                CornerRadius="4" Padding="10" Margin="0,0,12,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Dokumente"
+                           FontWeight="SemiBold" FontSize="14"
+                           Foreground="{DynamicResource AppTextStrong}" Margin="2,0,0,8"/>
+
+                <TextBox Grid.Row="1" x:Name="hSearch" Padding="6,5" Margin="0,0,0,8"
+                         Background="{DynamicResource AppBg}"
+                         Foreground="{DynamicResource AppText}"
+                         CaretBrush="{DynamicResource AppText}"
+                         BorderBrush="{DynamicResource AppBorder}"
+                         ToolTip="Dokumente durchsuchen"/>
+
+                <ListBox Grid.Row="2" x:Name="hList"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ItemContainerStyle="{StaticResource DocItem}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         DisplayMemberPath="Name"/>
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+                    <Button x:Name="hBtnNew"    Content="+ Neu"
+                            Style="{StaticResource HSideBtn}" Background="#16A34A"
+                            ToolTip="Neues Hilfe-Dokument anlegen"/>
+                    <Button x:Name="hBtnRename" Content="Umbenennen"
+                            Style="{StaticResource HSideBtn}" Background="#1E6DB5"
+                            Margin="6,0,0,0" ToolTip="Aktuelles Dokument umbenennen"/>
+                    <Button x:Name="hBtnDelete" Content="Loeschen"
+                            Style="{StaticResource HSideBtn}" Background="#B91C1C"
+                            Margin="6,0,0,0" ToolTip="Aktuelles Dokument loeschen"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Column="1" Grid.Row="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock x:Name="hTitle" Text="Hilfe"
+                               FontWeight="SemiBold" FontSize="16"
+                               Foreground="{DynamicResource AppTextStrong}"/>
+                    <TextBlock x:Name="hHint"
+                               Text="Lese-Modus - klicke auf 'Bearbeiten', um den Text zu aendern."
+                               Foreground="{DynamicResource AppTextMuted}" FontSize="11" Margin="0,3,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="hBtnEdit"   Content="Bearbeiten"
+                            Style="{StaticResource HBtn}" Background="#1E6DB5"/>
+                    <Button x:Name="hBtnSave"   Content="Speichern"
+                            Style="{StaticResource HBtn}" Background="#16A34A"
+                            Margin="8,0,0,0" Visibility="Collapsed"/>
+                    <Button x:Name="hBtnCancel" Content="Abbrechen"
+                            Style="{StaticResource HBtn}" Background="#94A3B8"
+                            Margin="8,0,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1" x:Name="hViewBorder"
+                    Background="{DynamicResource AppCardBg}"
+                    BorderBrush="{DynamicResource AppBorder}" BorderThickness="1"
+                    CornerRadius="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Padding="20,14">
+                    <RichTextBox x:Name="hViewer" IsReadOnly="True"
+                                 BorderThickness="0" Background="Transparent"
+                                 IsDocumentEnabled="True"
+                                 Padding="0" FontSize="13"
+                                 Foreground="{DynamicResource DocText}"/>
+                </ScrollViewer>
+            </Border>
+
+            <TextBox Grid.Row="1" x:Name="hEditor" Visibility="Collapsed"
+                     AcceptsReturn="True" TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     BorderBrush="{DynamicResource AppBorder}" BorderThickness="1"
+                     Background="{DynamicResource AppCardBg}"
+                     Foreground="{DynamicResource AppText}"
+                     CaretBrush="{DynamicResource AppText}"
+                     Padding="12,10"
+                     FontFamily="Consolas" FontSize="12"/>
+        </Grid>
+
+        <!-- Footer -->
+        <StackPanel Grid.Column="1" Grid.Row="1" HorizontalAlignment="Right"
+                    Orientation="Horizontal" Margin="0,12,0,0">
+            <Button x:Name="hBtnClose" Content="Schliessen"
+                    Style="{StaticResource HBtn}" Background="#64748B" Padding="20,9"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+    $hr = New-Object System.Xml.XmlNodeReader($HXaml)
+    $Script:HelpHubWin = [System.Windows.Markup.XamlReader]::Load($hr)
+    $Script:HelpHubWin.Owner = $Script:window
+
+    foreach ($k in @("AppBg","AppText","AppTextStrong","AppTextMuted","AppTextFaint",
+                     "AppBorder","AppCardBg","DocText")) {
+        $Script:HelpHubWin.Resources[$k] = $Script:window.FindResource($k)
+    }
+
+    $Script:HelpHubList       = $Script:HelpHubWin.FindName("hList")
+    $Script:HelpHubSearch     = $Script:HelpHubWin.FindName("hSearch")
+    $Script:HelpHubViewer     = $Script:HelpHubWin.FindName("hViewer")
+    $Script:HelpHubViewBorder = $Script:HelpHubWin.FindName("hViewBorder")
+    $Script:HelpHubEditor     = $Script:HelpHubWin.FindName("hEditor")
+    $Script:HelpHubTitle      = $Script:HelpHubWin.FindName("hTitle")
+    $Script:HelpHubHint       = $Script:HelpHubWin.FindName("hHint")
+    $Script:HelpHubBtnEdit    = $Script:HelpHubWin.FindName("hBtnEdit")
+    $Script:HelpHubBtnSave    = $Script:HelpHubWin.FindName("hBtnSave")
+    $Script:HelpHubBtnCancel  = $Script:HelpHubWin.FindName("hBtnCancel")
+    $Script:HelpHubBtnNew     = $Script:HelpHubWin.FindName("hBtnNew")
+    $Script:HelpHubBtnRename  = $Script:HelpHubWin.FindName("hBtnRename")
+    $Script:HelpHubBtnDelete  = $Script:HelpHubWin.FindName("hBtnDelete")
+    $Script:HelpHubBtnClose   = $Script:HelpHubWin.FindName("hBtnClose")
+    $Script:HelpHubIsEditing  = $false
+    $Script:HelpHubCurrentFile = $null
+
+    HelpHub-RefreshList
+
+    $Script:HelpHubList.Add_SelectionChanged({
+        $sel = $Script:HelpHubList.SelectedItem
+        if (-not $sel) { return }
+        if ($sel.File -eq $Script:HelpHubCurrentFile) { return }
+        if ($Script:HelpHubIsEditing) {
+            $ans = [System.Windows.MessageBox]::Show(
+                "Aenderungen am aktuellen Dokument verwerfen und wechseln?",
+                "Ungespeicherte Aenderungen",
+                [System.Windows.MessageBoxButton]::OKCancel,
+                [System.Windows.MessageBoxImage]::Question)
+            if ($ans -ne "OK") {
+                $prev = $Script:HelpHubDocs | Where-Object { $_.File -eq $Script:HelpHubCurrentFile } | Select-Object -First 1
+                if ($prev) { $Script:HelpHubList.SelectedItem = $prev }
+                return
+            }
+            HelpHub-ExitEdit
+        }
+        $Script:HelpHubCurrentFile = $sel.File
+        HelpHub-Render
+    })
+
+    $Script:HelpHubSearch.Add_TextChanged({ HelpHub-RefreshList })
+
+    $Script:HelpHubBtnEdit.Add_Click({
+        if (-not $Script:HelpHubCurrentFile) { return }
+        HelpHub-EnterEdit
+    })
+
+    $Script:HelpHubBtnSave.Add_Click({
+        if (-not $Script:HelpHubCurrentFile) { return }
+        if (Save-MarkdownDoc -File $Script:HelpHubCurrentFile -Text $Script:HelpHubEditor.Text) {
+            HelpHub-Render
+            HelpHub-ExitEdit
+        }
+    })
+
+    $Script:HelpHubBtnCancel.Add_Click({
+        HelpHub-Render
+        HelpHub-ExitEdit
+    })
+
+    $Script:HelpHubBtnNew.Add_Click({
+        $name = Show-InputDialog -Title "Neues Hilfe-Dokument" `
+                                 -Prompt "Name (ohne .md):" `
+                                 -Default "Neue Notiz"
+        if (-not $name) { return }
+        $name = $name.Trim()
+        if (-not (Test-HelpDocName $name)) {
+            [System.Windows.MessageBox]::Show("Ungueltiger Dateiname.","Hinweis",
+                [System.Windows.MessageBoxButton]::OK,
+                [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return
+        }
+        $file = New-HelpDoc -Name $name
+        if (-not $file) {
+            [System.Windows.MessageBox]::Show("Dokument konnte nicht angelegt werden (Name evtl. schon vergeben).",
+                "Hinweis",
+                [System.Windows.MessageBoxButton]::OK,
+                [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return
+        }
+        HelpHub-RefreshList -SelectFile $file
+        HelpHub-EnterEdit
+    })
+
+    $Script:HelpHubBtnRename.Add_Click({
+        if (-not $Script:HelpHubCurrentFile) { return }
+        $old = [System.IO.Path]::GetFileNameWithoutExtension($Script:HelpHubCurrentFile)
+        $name = Show-InputDialog -Title "Umbenennen" `
+                                 -Prompt "Neuer Name (ohne .md):" `
+                                 -Default $old
+        if (-not $name) { return }
+        $name = $name.Trim()
+        if ($name -eq $old) { return }
+        if (-not (Test-HelpDocName $name)) {
+            [System.Windows.MessageBox]::Show("Ungueltiger Dateiname.","Hinweis",
+                [System.Windows.MessageBoxButton]::OK,
+                [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return
+        }
+        $new = Rename-HelpDoc -OldPath $Script:HelpHubCurrentFile -NewName $name
+        if (-not $new) {
+            [System.Windows.MessageBox]::Show("Umbenennen fehlgeschlagen (Name evtl. schon vergeben).",
+                "Hinweis",
+                [System.Windows.MessageBoxButton]::OK,
+                [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return
+        }
+        $Script:HelpHubCurrentFile = $new
+        HelpHub-RefreshList -SelectFile $new
+    })
+
+    $Script:HelpHubBtnDelete.Add_Click({
+        if (-not $Script:HelpHubCurrentFile) { return }
+        $name = [System.IO.Path]::GetFileNameWithoutExtension($Script:HelpHubCurrentFile)
+        $ans = [System.Windows.MessageBox]::Show(
+            "Dokument '$name' wirklich loeschen?",
+            "Loeschen bestaetigen",
+            [System.Windows.MessageBoxButton]::OKCancel,
+            [System.Windows.MessageBoxImage]::Warning)
+        if ($ans -ne "OK") { return }
+        if (Remove-HelpDoc -Path $Script:HelpHubCurrentFile) {
+            $Script:HelpHubCurrentFile = $null
+            if ($Script:HelpHubIsEditing) { HelpHub-ExitEdit }
+            HelpHub-RefreshList
+        }
+    })
+
+    $Script:HelpHubBtnClose.Add_Click({ $Script:HelpHubWin.Close() })
+
+    $Script:HelpHubWin.ShowDialog() | Out-Null
+}
+
+function Show-HelpDialog { Show-HelpHubDialog }
 
 function Show-ChangesDialog {
     Show-MarkdownDocDialog `

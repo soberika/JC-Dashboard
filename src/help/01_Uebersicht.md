@@ -1,4 +1,4 @@
-﻿# JC Dashboard - Hilfe
+# JC Dashboard - Hilfe
 
 Das **JC Dashboard** ist deine zentrale Anlaufstelle fuer wichtige Werkzeuge. Es buendelt PowerShell-Skripte, HTA-Anwendungen und Webseiten in einer aufgeraeumten Oberflaeche und merkt sich, welche Tools du zuletzt verwendet hast.
 
@@ -21,11 +21,6 @@ Die Doku-Felder der Tools (und diese Hilfe) unterstuetzen einfaches Markdown:
 - Listen mit `-` oder `*`
 - Verweise mit `[Text](https://example.com)`
 
-## Diese Hilfe selbst anpassen
-Der Inhalt liegt in der Datei `help.md` neben der `dashboard.ps1`. Es gibt zwei Wege, sie zu pflegen:
-- Im Hilfe-Dialog auf **Bearbeiten** klicken, Text aendern, **Speichern** druecken - fertig.
-- Oder die Datei direkt in einem Texteditor oeffnen, anpassen und speichern.
-
 ## Tipp: Windows-Pfade in JSON
 Backslashes muessen in JSON-Dateien doppelt geschrieben werden:
 
@@ -33,4 +28,3 @@ Backslashes muessen in JSON-Dateien doppelt geschrieben werden:
 
 ## Tipp: Werkseinstellungen
 Im Einstellungs-Dialog setzt der Button **Werkseinstellungen** alle Tools auf die mitgelieferten Beispiele zurueck - praktisch zum Ausprobieren und Testen.
-
