@@ -7,8 +7,23 @@ Add-Type -AssemblyName System.Windows.Forms
 $Script:ScriptDir        = $PSScriptRoot
 $Script:ToolsFile        = Join-Path $Script:ScriptDir "tools.json"
 $Script:UsageFile        = Join-Path $Script:ScriptDir "usage.json"
+$Script:HelpFile         = Join-Path $Script:ScriptDir "help.md"
 $Script:CurrentMode      = "recent"
 $Script:IgnoreModeChange = $false
+
+$Script:DefaultHelpText = @'
+# JC Dashboard - Hilfe
+
+Das **JC Dashboard** buendelt PowerShell-Skripte, HTA-Anwendungen und Webseiten in einer aufgeraeumten Oberflaeche.
+
+## Aufbau
+- **Linke Spalte:** Modus-Auswahl (Startseite, Zuletzt verwendet, Alle Tools, Einstellungen).
+- **Mittlere Spalte:** Tool-Liste, in "Alle Tools" mit Suchfeld.
+- **Rechte Spalte:** Detail-Ansicht mit Tags, Version, Doku und Start-Button.
+
+## Diese Hilfe anpassen
+Im Hilfe-Dialog auf **Bearbeiten** klicken, Text aendern und **Speichern** druecken.
+'@
 
 # ---------------------------------------------------------------------------
 # Datenzugriff
@@ -53,6 +68,29 @@ function Save-Usage {
     param([hashtable]$Usage)
     [ordered]@{ lastUsed = $Usage } | ConvertTo-Json -Depth 3 |
         Set-Content -Path $Script:UsageFile -Encoding UTF8
+}
+
+function Load-HelpDoc {
+    if (-not (Test-Path $Script:HelpFile)) {
+        try { $Script:DefaultHelpText | Set-Content -Path $Script:HelpFile -Encoding UTF8 } catch {}
+        return $Script:DefaultHelpText
+    }
+    try { return (Get-Content $Script:HelpFile -Raw -Encoding UTF8) }
+    catch { return $Script:DefaultHelpText }
+}
+
+function Save-HelpDoc {
+    param([string]$Text)
+    try {
+        $Text | Set-Content -Path $Script:HelpFile -Encoding UTF8
+        return $true
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Hilfe konnte nicht gespeichert werden:`n$_", "Fehler",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Warning) | Out-Null
+        return $false
+    }
 }
 
 function Update-LastUsed {
@@ -154,6 +192,64 @@ function Filter-Tools {
             </Setter>
         </Style>
 
+        <Style x:Key="HomeButton" TargetType="Button">
+            <Setter Property="Background" Value="#0D1F2D"/>
+            <Setter Property="Foreground" Value="#C8D8E8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="#1A3347" BorderThickness="0,0,0,1">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#162A3A"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#1A3347"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HelpButton" TargetType="Button">
+            <Setter Property="Background" Value="#E2EAF2"/>
+            <Setter Property="Foreground" Value="#1A3347"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="22,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#CFDAE6"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#BCC8D6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="StartButton" TargetType="Button">
             <Setter Property="Background" Value="#1E6DB5"/>
             <Setter Property="Foreground" Value="White"/>
@@ -202,6 +298,9 @@ function Filter-Tools {
                                FontSize="11" Margin="0,3,0,0"/>
                 </StackPanel>
             </Border>
+            <Button DockPanel.Dock="Top" x:Name="btnHome"
+                    Style="{StaticResource HomeButton}"
+                    Content="&#127968;  Startseite"/>
             <ListBox x:Name="modeList" Background="Transparent"
                      BorderThickness="0" Margin="0,10,0,0">
                 <ListBoxItem Style="{StaticResource ModeItem}" Tag="recent"
@@ -256,16 +355,28 @@ function Filter-Tools {
 
             <!-- Welcome -->
             <StackPanel x:Name="welcomePanel"
-                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        MaxWidth="560">
                 <TextBlock Text="&#128075;" FontSize="52"
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Willkommen im JC Dashboard"
                            FontSize="22" FontWeight="SemiBold"
                            Foreground="#1A3347" HorizontalAlignment="Center"
-                           Margin="0,14,0,6"/>
-                <TextBlock Text="W&#228;hle links ein Tool aus."
-                           Foreground="#607D8B" FontSize="14"
-                           HorizontalAlignment="Center"/>
+                           Margin="0,14,0,10"/>
+                <TextBlock Foreground="#607D8B" FontSize="14"
+                           HorizontalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center"
+                           Margin="20,0,20,6"
+                           Text="Deine zentrale Anlaufstelle f&#252;r Skripte, HTA- und Web-Tools. W&#228;hle links den Modus, in der Mitte ein Tool - rechts findest du Details, Doku und den Start-Button."/>
+                <TextBlock Foreground="#94A3B8" FontSize="12"
+                           HorizontalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center"
+                           Margin="20,4,20,22"
+                           Text="Tipp: &#252;ber 'Hilfe &#246;ffnen' findest du eine kurze Anleitung - die du selbst erg&#228;nzen kannst."/>
+                <Button x:Name="btnHelp"
+                        Style="{StaticResource HelpButton}"
+                        HorizontalAlignment="Center"
+                        Content="&#10068;  Hilfe &#246;ffnen"/>
             </StackPanel>
 
             <!-- Details -->
@@ -327,6 +438,8 @@ $Script:detailTags       = $Script:window.FindName("detailTags")
 $Script:docViewer        = $Script:window.FindName("docViewer")
 $Script:imageGallery     = $Script:window.FindName("imageGallery")
 $Script:btnStartTool     = $Script:window.FindName("btnStartTool")
+$Script:btnHome          = $Script:window.FindName("btnHome")
+$Script:btnHelp          = $Script:window.FindName("btnHelp")
 
 # ---------------------------------------------------------------------------
 # Markdown -> FlowDocument
@@ -794,6 +907,169 @@ function Start-Tool {
             [System.Windows.MessageBoxButton]::OK,
             [System.Windows.MessageBoxImage]::Error) | Out-Null
     }
+}
+
+# ---------------------------------------------------------------------------
+# Hilfe-Dialog
+# ---------------------------------------------------------------------------
+
+function Show-HelpDialog {
+
+    [xml]$HXaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hilfe &#8211; JC Dashboard"
+        Height="640" Width="820"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI"
+        Background="#F8FAFC">
+
+    <Window.Resources>
+        <Style x:Key="HBtn" TargetType="Button">
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="JC Dashboard &#8211; Hilfe"
+                           FontWeight="SemiBold" FontSize="16"
+                           Foreground="#1A3347"/>
+                <TextBlock x:Name="hHint"
+                           Text="Lese-Modus &#8211; klicke auf 'Bearbeiten', um den Text zu &#228;ndern."
+                           Foreground="#64748B" FontSize="11" Margin="0,3,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="hBtnEdit" Content="&#9998;  Bearbeiten"
+                        Style="{StaticResource HBtn}" Background="#1E6DB5"/>
+                <Button x:Name="hBtnSave" Content="&#128190;  Speichern"
+                        Style="{StaticResource HBtn}" Background="#16A34A"
+                        Margin="8,0,0,0" Visibility="Collapsed"/>
+                <Button x:Name="hBtnCancel" Content="Abbrechen"
+                        Style="{StaticResource HBtn}" Background="#94A3B8"
+                        Margin="8,0,0,0" Visibility="Collapsed"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Lese-Ansicht -->
+        <Border Grid.Row="1" x:Name="hViewBorder"
+                Background="White" BorderBrush="#CBD5E1" BorderThickness="1"
+                CornerRadius="4">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled" Padding="20,14">
+                <RichTextBox x:Name="hViewer" IsReadOnly="True"
+                             BorderThickness="0" Background="Transparent"
+                             IsDocumentEnabled="True"
+                             Padding="0" FontSize="13"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Bearbeiten-Ansicht -->
+        <TextBox Grid.Row="1" x:Name="hEditor" Visibility="Collapsed"
+                 AcceptsReturn="True" TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 BorderBrush="#CBD5E1" BorderThickness="1"
+                 Background="White" Padding="12,10"
+                 FontFamily="Consolas" FontSize="12"/>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="2" HorizontalAlignment="Right"
+                    Orientation="Horizontal" Margin="0,12,0,0">
+            <Button x:Name="hBtnClose" Content="Schlie&#223;en"
+                    Style="{StaticResource HBtn}" Background="#64748B" Padding="20,9"/>
+        </StackPanel>
+    </Grid>
+</Window>
+'@
+
+    $hr           = New-Object System.Xml.XmlNodeReader($HXaml)
+    $hWin         = [System.Windows.Markup.XamlReader]::Load($hr)
+    $hWin.Owner   = $Script:window
+
+    $hViewer      = $hWin.FindName("hViewer")
+    $hViewBorder  = $hWin.FindName("hViewBorder")
+    $hEditor      = $hWin.FindName("hEditor")
+    $hBtnEdit     = $hWin.FindName("hBtnEdit")
+    $hBtnSave     = $hWin.FindName("hBtnSave")
+    $hBtnCancel   = $hWin.FindName("hBtnCancel")
+    $hBtnClose    = $hWin.FindName("hBtnClose")
+    $hHint        = $hWin.FindName("hHint")
+
+    $renderHelp = {
+        $txt = Load-HelpDoc
+        $hViewer.Document = Convert-MarkdownToFlowDocument -Text $txt
+        $hEditor.Text     = $txt
+    }
+    & $renderHelp
+
+    $enterEdit = {
+        $hViewBorder.Visibility = "Collapsed"
+        $hEditor.Visibility     = "Visible"
+        $hBtnEdit.Visibility    = "Collapsed"
+        $hBtnSave.Visibility    = "Visible"
+        $hBtnCancel.Visibility  = "Visible"
+        $hHint.Text             = "Bearbeiten &#8211; Markdown wird beim Speichern wieder formatiert dargestellt."
+        $hEditor.Focus() | Out-Null
+    }
+
+    $exitEdit = {
+        $hEditor.Visibility     = "Collapsed"
+        $hViewBorder.Visibility = "Visible"
+        $hBtnEdit.Visibility    = "Visible"
+        $hBtnSave.Visibility    = "Collapsed"
+        $hBtnCancel.Visibility  = "Collapsed"
+        $hHint.Text             = "Lese-Modus - klicke auf 'Bearbeiten', um den Text zu aendern."
+    }
+
+    $hBtnEdit.Add_Click({ & $enterEdit })
+
+    $hBtnSave.Add_Click({
+        if (Save-HelpDoc -Text $hEditor.Text) {
+            & $renderHelp
+            & $exitEdit
+        }
+    })
+
+    $hBtnCancel.Add_Click({
+        $hEditor.Text = Load-HelpDoc
+        & $exitEdit
+    })
+
+    $hBtnClose.Add_Click({ $hWin.Close() })
+
+    $hWin.ShowDialog() | Out-Null
 }
 
 # ---------------------------------------------------------------------------
@@ -1331,6 +1607,20 @@ $Script:btnStartTool.Add_Click({
     $tool = $args[0].Tag
     if ($tool) { Start-Tool $tool }
 })
+
+$Script:btnHome.Add_Click({
+    $Script:IgnoreModeChange = $true
+    $Script:modeList.SelectedIndex = -1
+    $Script:IgnoreModeChange = $false
+    $Script:toolList.Items.Clear()
+    $Script:col2Header.Visibility   = "Visible"
+    $Script:searchBorder.Visibility = "Collapsed"
+    $Script:col2Title.Text          = "STARTSEITE"
+    Add-EmptyStateItem "Waehle links 'Zuletzt verwendet' oder 'Alle Tools'."
+    Show-WelcomePane
+})
+
+$Script:btnHelp.Add_Click({ Show-HelpDialog })
 
 # ---------------------------------------------------------------------------
 # Start
