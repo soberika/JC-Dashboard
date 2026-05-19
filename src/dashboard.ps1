@@ -9,7 +9,9 @@ $Script:ToolsFile        = Join-Path $Script:ScriptDir "tools.json"
 $Script:UsageFile        = Join-Path $Script:ScriptDir "usage.json"
 $Script:HelpFile         = Join-Path $Script:ScriptDir "help.md"
 $Script:ChangesFile      = Join-Path $Script:ScriptDir "changes.md"
+$Script:PrefsFile        = Join-Path $Script:ScriptDir "prefs.json"
 $Script:CurrentMode      = "recent"
+$Script:CurrentTheme     = "light"
 $Script:IgnoreModeChange = $false
 
 $Script:DefaultHelpText = @'
@@ -102,6 +104,81 @@ function Save-MarkdownDoc {
     }
 }
 
+function Load-Prefs {
+    if (-not (Test-Path $Script:PrefsFile)) { return @{} }
+    try {
+        $json = Get-Content $Script:PrefsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $ht   = @{}
+        $json.PSObject.Properties | ForEach-Object { $ht[$_.Name] = $_.Value }
+        return $ht
+    } catch { return @{} }
+}
+
+function Save-Prefs {
+    param([hashtable]$Prefs)
+    try {
+        $Prefs | ConvertTo-Json -Depth 3 |
+            Set-Content -Path $Script:PrefsFile -Encoding UTF8
+    } catch {}
+}
+
+$Script:LightPalette = @{
+    AppBg          = "#F0F4F8"
+    AppText        = "#0F2030"
+    AppTextStrong  = "#1A3347"
+    AppTextMuted   = "#607D8B"
+    AppTextFaint   = "#94A3B8"
+    AppBorder      = "#CBD5E1"
+    AppCardBg      = "#FFFFFF"
+    AppChipBg      = "#DDE4EE"
+    AppChipFg      = "#475569"
+    DocText        = "#2D3748"
+    HelpBtnBg      = "#E2EAF2"
+    HelpBtnFg      = "#1A3347"
+    HelpBtnHover   = "#CFDAE6"
+    HelpBtnPress   = "#BCC8D6"
+}
+
+$Script:DarkPalette = @{
+    AppBg          = "#0F1620"
+    AppText        = "#F1F5F9"
+    AppTextStrong  = "#E2EAF2"
+    AppTextMuted   = "#94A3B8"
+    AppTextFaint   = "#64748B"
+    AppBorder      = "#1E3A52"
+    AppCardBg      = "#1A2433"
+    AppChipBg      = "#1E3A52"
+    AppChipFg      = "#C8D8E8"
+    DocText        = "#C8D8E8"
+    HelpBtnBg      = "#1E3A52"
+    HelpBtnFg      = "#E2EAF2"
+    HelpBtnHover   = "#2A4A66"
+    HelpBtnPress   = "#355A78"
+}
+
+function Apply-Theme {
+    param([string]$Mode)
+    if ($Mode -ne "dark") { $Mode = "light" }
+    $palette = if ($Mode -eq "dark") { $Script:DarkPalette } else { $Script:LightPalette }
+    $conv = [System.Windows.Media.BrushConverter]::new()
+    foreach ($key in $palette.Keys) {
+        $brush = New-Object System.Windows.Media.SolidColorBrush(
+            $conv.ConvertFromString($palette[$key]))
+        $brush.Freeze()
+        $Script:window.Resources[$key] = $brush
+    }
+    $Script:CurrentTheme = $Mode
+    if ($Script:btnTheme) {
+        $Script:btnTheme.Content = if ($Mode -eq "dark") { [char]0x2600 } else { [char]0x263D }
+        $Script:btnTheme.ToolTip = if ($Mode -eq "dark") { "Light-Mode" } else { "Dark-Mode" }
+    }
+    # Aktive Tool-Details neu rendern, damit dynamisch erzeugte Elemente die neuen Farben uebernehmen
+    $current = $Script:btnStartTool.Tag
+    if ($current -and $Script:detailScroll.Visibility -eq "Visible") {
+        Show-ToolDetails -Tool $current
+    }
+}
+
 function Update-LastUsed {
     param([string]$ToolId)
     $usage           = Load-Usage
@@ -150,6 +227,22 @@ function Filter-Tools {
         FontFamily="Segoe UI">
 
     <Window.Resources>
+
+        <!-- Theme-Brushes (werden zur Laufzeit getauscht) -->
+        <SolidColorBrush x:Key="AppBg"          Color="#F0F4F8"/>
+        <SolidColorBrush x:Key="AppText"        Color="#0F2030"/>
+        <SolidColorBrush x:Key="AppTextStrong"  Color="#1A3347"/>
+        <SolidColorBrush x:Key="AppTextMuted"   Color="#607D8B"/>
+        <SolidColorBrush x:Key="AppTextFaint"   Color="#94A3B8"/>
+        <SolidColorBrush x:Key="AppBorder"      Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="AppCardBg"      Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppChipBg"      Color="#DDE4EE"/>
+        <SolidColorBrush x:Key="AppChipFg"      Color="#475569"/>
+        <SolidColorBrush x:Key="DocText"        Color="#2D3748"/>
+        <SolidColorBrush x:Key="HelpBtnBg"      Color="#E2EAF2"/>
+        <SolidColorBrush x:Key="HelpBtnFg"      Color="#1A3347"/>
+        <SolidColorBrush x:Key="HelpBtnHover"   Color="#CFDAE6"/>
+        <SolidColorBrush x:Key="HelpBtnPress"   Color="#BCC8D6"/>
 
         <Style x:Key="ModeItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="#7C9AB8"/>
@@ -283,8 +376,8 @@ function Filter-Tools {
         </Style>
 
         <Style x:Key="HelpButton" TargetType="Button">
-            <Setter Property="Background" Value="#E2EAF2"/>
-            <Setter Property="Foreground" Value="#1A3347"/>
+            <Setter Property="Background" Value="{DynamicResource HelpBtnBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource HelpBtnFg}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="22,10"/>
             <Setter Property="FontSize" Value="13"/>
@@ -299,10 +392,10 @@ function Filter-Tools {
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#CFDAE6"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource HelpBtnHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#BCC8D6"/>
+                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource HelpBtnPress}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -375,6 +468,9 @@ function Filter-Tools {
                     <Button x:Name="btnChangesMini"
                             Style="{StaticResource IconNavButton}"
                             Content="&#128221;" ToolTip="&#196;nderungsprotokoll"/>
+                    <Button x:Name="btnTheme"
+                            Style="{StaticResource IconNavButton}"
+                            Content="&#9789;" ToolTip="Dark-Mode"/>
                 </StackPanel>
             </Border>
 
@@ -426,7 +522,7 @@ function Filter-Tools {
         </Grid>
 
         <!-- COL 3: Detail-Pane -->
-        <Grid Grid.Column="2" Background="#F0F4F8">
+        <Grid Grid.Column="2" Background="{DynamicResource AppBg}">
 
             <!-- Welcome -->
             <StackPanel x:Name="welcomePanel"
@@ -436,14 +532,14 @@ function Filter-Tools {
                            HorizontalAlignment="Center"/>
                 <TextBlock Text="Willkommen im JC Dashboard"
                            FontSize="22" FontWeight="SemiBold"
-                           Foreground="#1A3347" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource AppTextStrong}" HorizontalAlignment="Center"
                            Margin="0,14,0,10"/>
-                <TextBlock Foreground="#607D8B" FontSize="14"
+                <TextBlock Foreground="{DynamicResource AppTextMuted}" FontSize="14"
                            HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center"
                            Margin="20,0,20,6"
                            Text="Deine zentrale Anlaufstelle f&#252;r Skripte, HTA- und Web-Tools. W&#228;hle links den Modus, in der Mitte ein Tool - rechts findest du Details, Doku und den Start-Button."/>
-                <TextBlock Foreground="#94A3B8" FontSize="12"
+                <TextBlock Foreground="{DynamicResource AppTextFaint}" FontSize="12"
                            HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center"
                            Margin="20,4,20,22"
@@ -467,26 +563,26 @@ function Filter-Tools {
 
                     <TextBlock x:Name="detailTitle"
                                FontSize="26" FontWeight="Bold"
-                               Foreground="#0F2030" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource AppText}" TextWrapping="Wrap"/>
 
                     <WrapPanel x:Name="detailMeta" Margin="0,10,0,14"/>
 
                     <WrapPanel x:Name="detailTags" Margin="0,0,0,16"/>
 
-                    <Separator Background="#CBD5E1" Margin="0,0,0,16"/>
+                    <Separator Background="{DynamicResource AppBorder}" Margin="0,0,0,16"/>
 
                     <RichTextBox x:Name="docViewer"
                                  IsReadOnly="True" BorderThickness="0"
                                  Background="Transparent"
                                  IsDocumentEnabled="True"
                                  Padding="0" FontSize="13"
-                                 Foreground="#2D3748"
+                                 Foreground="{DynamicResource DocText}"
                                  Visibility="Collapsed"/>
 
                     <WrapPanel x:Name="imageGallery"
                                Margin="0,12,0,0" Visibility="Collapsed"/>
 
-                    <Separator Background="#CBD5E1" Margin="0,24,0,20"/>
+                    <Separator Background="{DynamicResource AppBorder}" Margin="0,24,0,20"/>
 
                     <Button x:Name="btnStartTool"
                             Style="{StaticResource StartButton}"
@@ -524,6 +620,7 @@ $Script:btnChanges       = $Script:window.FindName("btnChanges")
 $Script:btnSettings      = $Script:window.FindName("btnSettings")
 $Script:btnHelpMini      = $Script:window.FindName("btnHelpMini")
 $Script:btnChangesMini   = $Script:window.FindName("btnChangesMini")
+$Script:btnTheme         = $Script:window.FindName("btnTheme")
 
 # ---------------------------------------------------------------------------
 # Markdown -> FlowDocument
@@ -572,10 +669,14 @@ function Add-InlineContent {
 function Convert-MarkdownToFlowDocument {
     param([string]$Text)
 
+    $bDoc = $Script:window.FindResource("DocText")
+    $bH1  = $Script:window.FindResource("AppText")
+    $bH2  = $Script:window.FindResource("AppTextStrong")
+
     $doc            = New-Object System.Windows.Documents.FlowDocument
     $doc.FontFamily = New-Object System.Windows.Media.FontFamily("Segoe UI")
     $doc.FontSize   = 13
-    $doc.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#2D3748")
+    $doc.Foreground = $bDoc
 
     $listItems = [System.Collections.ArrayList]@()
 
@@ -604,7 +705,7 @@ function Convert-MarkdownToFlowDocument {
             $r = New-Object System.Windows.Documents.Run($Matches[1])
             $r.FontSize   = 20
             $r.FontWeight = [System.Windows.FontWeights]::SemiBold
-            $r.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#0F2030")
+            $r.Foreground = $bH1
             $p.Inlines.Add($r) | Out-Null
             $doc.Blocks.Add($p) | Out-Null
         } elseif ($line -match '^## (.+)$') {
@@ -614,7 +715,7 @@ function Convert-MarkdownToFlowDocument {
             $r = New-Object System.Windows.Documents.Run($Matches[1])
             $r.FontSize   = 15
             $r.FontWeight = [System.Windows.FontWeights]::SemiBold
-            $r.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#1A3347")
+            $r.Foreground = $bH2
             $p.Inlines.Add($r) | Out-Null
             $doc.Blocks.Add($p) | Out-Null
         } elseif ($line -match '^[-\*] (.+)$') {
@@ -656,13 +757,13 @@ function New-MetaChip {
 function New-TagChip {
     param([string]$Text)
     $border = New-Object System.Windows.Controls.Border
-    $border.Background   = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#DDE4EE")
+    $border.Background   = $Script:window.FindResource("AppChipBg")
     $border.CornerRadius = New-Object System.Windows.CornerRadius(12)
     $border.Padding      = New-Object System.Windows.Thickness(10, 4, 10, 4)
     $border.Margin       = New-Object System.Windows.Thickness(0, 0, 6, 6)
     $tb                  = New-Object System.Windows.Controls.TextBlock
     $tb.Text             = $Text
-    $tb.Foreground       = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#475569")
+    $tb.Foreground       = $Script:window.FindResource("AppChipFg")
     $tb.FontSize         = 12
     $border.Child        = $tb
     return $border
@@ -895,7 +996,7 @@ function Show-ToolDetails {
 
             $border = New-Object System.Windows.Controls.Border
             $border.BorderThickness = New-Object System.Windows.Thickness(1)
-            $border.BorderBrush     = [System.Windows.Media.BrushConverter]::new().ConvertFromString("#CBD5E1")
+            $border.BorderBrush     = $Script:window.FindResource("AppBorder")
             $border.CornerRadius    = New-Object System.Windows.CornerRadius(4)
 
             $clickable = $false
@@ -916,14 +1017,14 @@ function Show-ToolDetails {
                 } catch {
                     $tb = New-Object System.Windows.Controls.TextBlock
                     $tb.Text       = "[Bild konnte nicht geladen werden]"
-                    $tb.Foreground = "#94A3B8"
+                    $tb.Foreground = $Script:window.FindResource("AppTextFaint")
                     $tb.Margin     = New-Object System.Windows.Thickness(10, 6, 10, 6)
                     $border.Child  = $tb
                 }
             } else {
                 $tb = New-Object System.Windows.Controls.TextBlock
                 $tb.Text       = "[Nicht gefunden: $imgPath]"
-                $tb.Foreground = "#94A3B8"
+                $tb.Foreground = $Script:window.FindResource("AppTextFaint")
                 $tb.Margin     = New-Object System.Windows.Thickness(10, 6, 10, 6)
                 $border.Child  = $tb
             }
@@ -941,7 +1042,7 @@ function Show-ToolDetails {
             if ($imgCap) {
                 $capBlock              = New-Object System.Windows.Controls.TextBlock
                 $capBlock.Text         = $imgCap
-                $capBlock.Foreground   = "#475569"
+                $capBlock.Foreground   = $Script:window.FindResource("AppChipFg")
                 $capBlock.FontSize     = 11
                 $capBlock.FontStyle    = "Italic"
                 $capBlock.Margin       = New-Object System.Windows.Thickness(2, 5, 2, 0)
@@ -1012,7 +1113,7 @@ function Show-MarkdownDocDialog {
         Height="640" Width="820"
         WindowStartupLocation="CenterOwner"
         FontFamily="Segoe UI"
-        Background="#F8FAFC">
+        Background="{DynamicResource AppBg}">
 
     <Window.Resources>
         <Style x:Key="HBtn" TargetType="Button">
@@ -1056,10 +1157,10 @@ function Show-MarkdownDocDialog {
             <StackPanel Grid.Column="0">
                 <TextBlock Text="$Subtitle"
                            FontWeight="SemiBold" FontSize="16"
-                           Foreground="#1A3347"/>
+                           Foreground="{DynamicResource AppTextStrong}"/>
                 <TextBlock x:Name="hHint"
                            Text="Lese-Modus &#8211; klicke auf 'Bearbeiten', um den Text zu &#228;ndern."
-                           Foreground="#64748B" FontSize="11" Margin="0,3,0,0"/>
+                           Foreground="{DynamicResource AppTextMuted}" FontSize="11" Margin="0,3,0,0"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="hBtnEdit" Content="&#9998;  Bearbeiten"
@@ -1075,14 +1176,16 @@ function Show-MarkdownDocDialog {
 
         <!-- Lese-Ansicht -->
         <Border Grid.Row="1" x:Name="hViewBorder"
-                Background="White" BorderBrush="#CBD5E1" BorderThickness="1"
+                Background="{DynamicResource AppCardBg}"
+                BorderBrush="{DynamicResource AppBorder}" BorderThickness="1"
                 CornerRadius="4">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled" Padding="20,14">
                 <RichTextBox x:Name="hViewer" IsReadOnly="True"
                              BorderThickness="0" Background="Transparent"
                              IsDocumentEnabled="True"
-                             Padding="0" FontSize="13"/>
+                             Padding="0" FontSize="13"
+                             Foreground="{DynamicResource DocText}"/>
             </ScrollViewer>
         </Border>
 
@@ -1090,8 +1193,11 @@ function Show-MarkdownDocDialog {
         <TextBox Grid.Row="1" x:Name="hEditor" Visibility="Collapsed"
                  AcceptsReturn="True" TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"
-                 BorderBrush="#CBD5E1" BorderThickness="1"
-                 Background="White" Padding="12,10"
+                 BorderBrush="{DynamicResource AppBorder}" BorderThickness="1"
+                 Background="{DynamicResource AppCardBg}"
+                 Foreground="{DynamicResource AppText}"
+                 CaretBrush="{DynamicResource AppText}"
+                 Padding="12,10"
                  FontFamily="Consolas" FontSize="12"/>
 
         <!-- Footer -->
@@ -1107,6 +1213,11 @@ function Show-MarkdownDocDialog {
     $hr           = New-Object System.Xml.XmlNodeReader($HXaml)
     $hWin         = [System.Windows.Markup.XamlReader]::Load($hr)
     $hWin.Owner   = $Script:window
+
+    foreach ($k in @("AppBg","AppText","AppTextStrong","AppTextMuted","AppTextFaint",
+                     "AppBorder","AppCardBg","DocText")) {
+        $hWin.Resources[$k] = $Script:window.FindResource($k)
+    }
 
     $hViewer      = $hWin.FindName("hViewer")
     $hViewBorder  = $hWin.FindName("hViewBorder")
@@ -1728,9 +1839,21 @@ $Script:btnSettings.Add_Click({
     Build-ToolList -Mode $Script:CurrentMode
 })
 
+$Script:btnTheme.Add_Click({
+    $next = if ($Script:CurrentTheme -eq "dark") { "light" } else { "dark" }
+    Apply-Theme -Mode $next
+    $prefs = Load-Prefs
+    $prefs["theme"] = $next
+    Save-Prefs $prefs
+})
+
 # ---------------------------------------------------------------------------
 # Start
 # ---------------------------------------------------------------------------
+
+$savedTheme = (Load-Prefs)["theme"]
+if (-not $savedTheme) { $savedTheme = "light" }
+Apply-Theme -Mode $savedTheme
 
 $Script:modeList.SelectedIndex = 0
 $Script:window.ShowDialog() | Out-Null

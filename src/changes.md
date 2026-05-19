@@ -4,6 +4,8 @@ Hier landen alle wichtigen Aenderungen am JC Dashboard.
 Eintraege koennen ueber den Knopf **Bearbeiten** direkt in der App erweitert oder im Texteditor in `src/changes.md` gepflegt werden.
 
 ## 2026-05-19
+- **Dark-Mode-Switch** unten in Col1: schaltet zwischen Light- und Dark-Palette um, Praeferenz wird in `prefs.json` gespeichert.
+- **Einstellungen** als Icon-Button in die untere Bottom-Reihe von Col1 verschoben (zusammen mit Hilfe und Aenderungsprotokoll).
 - **Startseite-Button** in der linken Spalte hinzugefuegt.
 - **Welcome-Pane** mit Kurzbeschreibung und Hilfe-Zugang ueberarbeitet.
 - **Hilfe-Dialog** (Pop-up) mit Markdown-Anzeige und Inline-Editor eingefuehrt; Inhalt liegt in `src/help.md`.

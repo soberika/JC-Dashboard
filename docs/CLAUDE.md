@@ -30,6 +30,7 @@ JC-Dashboard/
 │   ├── usage.json             # Nutzungs-Historie für "Zuletzt verwendet"
 │   ├── help.md                # Inhalt des Hilfe-Dialogs (in der App editierbar)
 │   ├── changes.md             # Aenderungsprotokoll (in der App editierbar)
+│   ├── prefs.json             # Lokale Praeferenzen (Theme etc.) - in .gitignore
 │   └── Start-Dashboard.ps1    # Einstiegs-Skript → Rechtsklick "Mit PowerShell ausführen"
 ├── assets/                    # Bilder, Icons (optional)
 ├── docs/
@@ -92,6 +93,14 @@ JC-Dashboard/
   ]
 }
 ```
+
+### Theme (Light / Dark)
+- Toggle ueber das Mond-/Sonne-Icon unten in Col1.
+- Brushes liegen als `DynamicResource` in `Window.Resources`; `Apply-Theme` tauscht sie zur Laufzeit aus.
+- Palettes: `$Script:LightPalette` / `$Script:DarkPalette` in `dashboard.ps1`.
+- Dynamisch erzeugte Inhalte (Markdown-FlowDocument, Tag-Chips, Bilder-Galerie) lesen die Brushes via `FindResource` - bei Theme-Wechsel rendert `Apply-Theme` die aktive Detail-Ansicht neu.
+- Praeferenz wird in `src/prefs.json` gespeichert (in `.gitignore`).
+- Col1/Col2 bleiben absichtlich immer dunkel; getauscht wird der Detail-Bereich (Col3) und der Hilfe-/Aenderungen-Dialog. Der Einstellungen-Dialog bleibt hell.
 
 ### Markdown-Dokumente (`help.md`, `changes.md`)
 - Beide liegen unter `src/` und werden vom generischen `Show-MarkdownDocDialog` gelesen/geschrieben.
