@@ -90,13 +90,13 @@
                       "url":  "https://vegz/open/index2.php"
                   },
                   {
-                      "id":  "sozial_portal",
-                      "name":  "Sozial-Portal",
+                      "id":  "systemer_wiki",
+                      "name":  "Systemer-Wiki",
                       "type":  "web",
                       "icon":  "ML",
                       "description":  "",
                       "tags":  [
-
+                                   "JC"
                                ],
                       "version":  "",
                       "versionDate":  "",
