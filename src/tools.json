@@ -184,6 +184,43 @@
 
                                  ],
                       "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Monatliche Prüfläufe\\New-Prueflaeufe.ps1"
+                  },
+                  {
+                      "id":  "esolution_portal",
+                      "name":  "eSolution Portal",
+                      "type":  "web",
+                      "icon":  "§58",
+                      "description":  "Öffnen der eSolution Website",
+                      "tags":  [
+                                   "Datenabgleich",
+                                   "monatlich",
+                                   "quatarlsweise"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Datenabgleich - Anmeldung am DRV-System \r\n\r\nLink: [eSolution](https://dsrv.eservice-drv.de/DSRVBoxWeb/)\r\n\r\nDas Browserzertifikat \"Landkreis Meißen\" oder das persönliche Zertifikat nutzen.\r\n\r\nAufbau für Benutzername: G00055xx (siehe eigene Accountdaten)\r\n\r\nOrdner mit gespeicherten Zertifikaten: [Pfad](\\\\vjc\\GB1_Systembetreuung\\Datenabgleich_VDR\\Zertifikat)\r\n\r\n## Verweise\r\n\r\n[Anfragedatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_anfordern)\r\n[Fehlerdatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_rueckmeldung)\r\n[Antwortdatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_verarbeiten)",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://dsrv.eservice-drv.de/eLogin/loginUserEingabe.html"
+                  },
+                  {
+                      "id":  "profilspeicherplatz_reinigen",
+                      "name":  "Profilspeicherplatz reinigen",
+                      "type":  "powershell",
+                      "icon":  "🗑️",
+                      "description":  "Profilspeicherplatz-Reinigung leicht gemacht!",
+                      "tags":  [
+                                   "Explorer",
+                                   "First-Level-Support"
+                               ],
+                      "version":  "1.0.",
+                      "versionDate":  "2026-03-05",
+                      "doc":  "Folgender Link ist zu Verwenden wenn man bei Mitarbeitern auf dem Bildschirm das Tool ausführen möchte:\r\n**\\\\vjc\\SOZIAL-Portal\\Dateien\\Systembetreuung\\Profilspeicher_optimieren\\_Systemer\\ProfilspeicherSystemer.bat**\r\n\r\n",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\vjc\\SOZIAL-Portal\\Dateien\\Systembetreuung\\Profilspeicher_optimieren\\_Systemer\\ProfilspeicherSystemer.ps1"
                   }
               ]
 }
