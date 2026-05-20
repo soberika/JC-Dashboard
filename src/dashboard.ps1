@@ -15,6 +15,16 @@ $Script:CurrentMode      = "recent"
 $Script:CurrentTheme     = "light"
 $Script:IgnoreModeChange = $false
 
+# Farb-Map fuer Tool-Badges (erweiterbar). Schluessel = lowercase type / tag.
+$Script:ToolTypeColors = [ordered]@{
+    "powershell" = "#1E6DB5"   # Blau
+    "web"        = "#16A34A"   # Gruen
+    "hta"        = "#F59E0B"   # Orange
+    "ml"         = "#8B5CF6"   # Lila  (Tag-Fallback)
+    "jc"         = "#14B8A6"   # Teal  (Tag-Fallback)
+    "default"    = "#64748B"   # Grau  (Fallback)
+}
+
 $Script:DefaultHelpText = @'
 # JC Dashboard - Hilfe
 
@@ -345,7 +355,7 @@ function Filter-Tools {
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="bd" Background="Transparent"
                                 BorderBrush="#1E3A52" BorderThickness="0,0,0,1">
-                            <ContentPresenter Margin="14,10"/>
+                            <ContentPresenter Margin="14,13"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -627,9 +637,15 @@ function Filter-Tools {
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="32,28,32,32">
 
-                    <TextBlock x:Name="detailTitle"
-                               FontSize="26" FontWeight="Bold"
-                               Foreground="{DynamicResource AppText}" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ContentControl x:Name="detailBadgeHost"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,18,0"/>
+                        <TextBlock x:Name="detailTitle"
+                                   FontSize="26" FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppText}" TextWrapping="Wrap"/>
+                    </StackPanel>
 
                     <WrapPanel x:Name="detailMeta" Margin="0,10,0,14"/>
 
@@ -675,6 +691,7 @@ $Script:col2Title        = $Script:window.FindName("col2Title")
 $Script:welcomePanel     = $Script:window.FindName("welcomePanel")
 $Script:detailScroll     = $Script:window.FindName("detailScroll")
 $Script:detailTitle      = $Script:window.FindName("detailTitle")
+$Script:detailBadgeHost  = $Script:window.FindName("detailBadgeHost")
 $Script:detailMeta       = $Script:window.FindName("detailMeta")
 $Script:detailTags       = $Script:window.FindName("detailTags")
 $Script:docViewer        = $Script:window.FindName("docViewer")
@@ -804,6 +821,203 @@ function Convert-MarkdownToFlowDocument {
 # Hilfsfunktionen UI
 # ---------------------------------------------------------------------------
 
+# Liefert die Hex-Farbe fuer den Badge eines Tools.
+# Erst Typ-Match, dann Tag-Fallback (ML/JC), sonst Default-Grau.
+function Get-ToolBadgeColor {
+    param($Tool)
+    if (-not $Tool) { return $Script:ToolTypeColors["default"] }
+    $type = if ($Tool.type) { ([string]$Tool.type).ToLower() } else { "" }
+    if ($type -and $Script:ToolTypeColors.Contains($type)) {
+        return $Script:ToolTypeColors[$type]
+    }
+    if ($Tool.tags) {
+        foreach ($t in $Tool.tags) {
+            $low = ([string]$t).ToLower()
+            if ($Script:ToolTypeColors.Contains($low)) {
+                return $Script:ToolTypeColors[$low]
+            }
+        }
+    }
+    return $Script:ToolTypeColors["default"]
+}
+
+# Loest einen Icon-Bildpfad auf (relativ zu Script-Dir oder absolut). Gibt
+# den absoluten Pfad zurueck wenn die Datei existiert, sonst $null.
+function Resolve-ToolIconPath {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+    $abs = if ([System.IO.Path]::IsPathRooted($Path)) { $Path } `
+           else { Join-Path $Script:ScriptDir $Path }
+    if (Test-Path -LiteralPath $abs) { return $abs }
+    return $null
+}
+
+# Laedt ein Bild (.ico/.png/.jpg/.bmp) als gefrorenes BitmapImage. CacheOption
+# OnLoad sorgt dafuer, dass die Datei nicht durch WPF gesperrt bleibt.
+function Get-ToolIconBitmap {
+    param([string]$AbsolutePath)
+    try {
+        $bi = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bi.BeginInit()
+        $bi.UriSource   = New-Object System.Uri($AbsolutePath, [System.UriKind]::Absolute)
+        $bi.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+        $bi.EndInit()
+        $bi.Freeze()
+        return $bi
+    } catch {
+        return $null
+    }
+}
+
+# Erzeugt einen runden, "premium" wirkenden Tool-Badge.
+#
+# Reihenfolge fuer den Inhalt:
+#   1. Bild aus $Tool.iconPath (.ico/.png/.jpg...) - kreisrund geclippt
+#   2. Emoji/Text aus $Tool.icon
+#   3. Fallback "?"
+#
+# Wichtig fuer das Rendering:
+#   - Die XAML wird KONDITIONAL gebaut (nur Image ODER nur TextBlock im Grid),
+#     kein Visibility-Switching - das vermeidet Layout-Caching-Effekte.
+#   - Panel.ZIndex wird auf allen Children explizit gesetzt. Sonst kann der
+#     DropShadowEffect auf der Ellipse dazu fuehren, dass Geschwister
+#     darunter statt darueber rendern (bekannter WPF-Quirk).
+#   - Fill und Text werden direkt im XAML eingebettet, damit alle Properties
+#     vor dem ersten Layout-Pass gesetzt sind. Image.Source/Clip werden danach
+#     per Property gesetzt (URI-Konvertierung ist im Attribut umstaendlich).
+function New-ToolBadge {
+    param(
+        $Tool,
+        [int]$Size = 48,
+        [string]$OverrideIcon = $null,
+        [string]$OverrideColor = $null,
+        [string]$OverrideIconPath = $null
+    )
+    $color = if ($OverrideColor) { $OverrideColor } else { Get-ToolBadgeColor -Tool $Tool }
+    # Wichtig: [string]$OverrideIcon = $null in der Parameter-Deklaration wird
+    # zu "" gecastet - daher hier explizit auf nicht-leer pruefen, sonst greift
+    # der Override-Zweig immer und $Tool.icon wird nie gelesen.
+    $emoji = if (-not [string]::IsNullOrEmpty($OverrideIcon)) { $OverrideIcon } `
+             elseif ($Tool -and $Tool.icon -and -not [string]::IsNullOrWhiteSpace([string]$Tool.icon)) { [string]$Tool.icon } `
+             else { "?" }
+
+    # Bildpfad bestimmen (Override > Tool.iconPath) und ggf. laden.
+    $rawPath = if (-not [string]::IsNullOrEmpty($OverrideIconPath)) { $OverrideIconPath } `
+               elseif ($Tool -and $Tool.iconPath) { [string]$Tool.iconPath } `
+               else { "" }
+    $imgPath = Resolve-ToolIconPath -Path $rawPath
+    $bitmap  = if ($imgPath) { Get-ToolIconBitmap -AbsolutePath $imgPath } else { $null }
+
+    $fontSize = [Math]::Round($Size * 0.55)
+
+    # Konditionale Content-XAML: nur das Element, das wir wirklich brauchen.
+    if ($bitmap) {
+        $contentXaml = '<Image x:Name="badgeImage" Stretch="Uniform" IsHitTestVisible="False" Panel.ZIndex="10"/>'
+    } else {
+        # TextBlock leer im XAML anlegen, Text wird programmatisch gesetzt
+        # (sonst wuerde der XmlReader Surrogate-Pairs aus Emojis verschlucken).
+        $contentXaml = @"
+<TextBlock x:Name="badgeText"
+           Foreground="White" FontWeight="SemiBold"
+           FontSize="$fontSize" FontFamily="Segoe UI Emoji"
+           HorizontalAlignment="Center" VerticalAlignment="Center"
+           TextAlignment="Center" IsHitTestVisible="False"
+           Panel.ZIndex="10">
+    <TextBlock.Effect>
+        <DropShadowEffect BlurRadius="3" ShadowDepth="0" Opacity="0.6" Color="#000000"/>
+    </TextBlock.Effect>
+</TextBlock>
+"@
+    }
+
+    # Inline-XAML: Grid mit Ellipse + Inhalt. Effekt nur auf der Ellipse,
+    # ScaleTransform auf dem Grid. ZIndex explizit, damit der Inhalt sicher
+    # ueber der schatten-behafteten Disc liegt.
+    $xaml = @"
+<Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Width="$Size" Height="$Size"
+      Background="Transparent"
+      HorizontalAlignment="Center" VerticalAlignment="Center"
+      SnapsToDevicePixels="True" UseLayoutRounding="True"
+      RenderTransformOrigin="0.5,0.5">
+    <Grid.RenderTransform>
+        <ScaleTransform ScaleX="1" ScaleY="1"/>
+    </Grid.RenderTransform>
+    <Ellipse x:Name="badgeDisc"
+             Fill="$color" Stroke="White" StrokeThickness="2.5"
+             IsHitTestVisible="False" Panel.ZIndex="0">
+        <Ellipse.Effect>
+            <DropShadowEffect BlurRadius="10" ShadowDepth="2"
+                              Direction="270" Opacity="0.4" Color="#000000"/>
+        </Ellipse.Effect>
+    </Ellipse>
+    $contentXaml
+</Grid>
+"@
+
+    $reader    = New-Object System.IO.StringReader($xaml)
+    $xmlReader = [System.Xml.XmlReader]::Create($reader)
+    $root      = [System.Windows.Markup.XamlReader]::Load($xmlReader)
+    $xmlReader.Close()
+
+    $tb = $root.FindName("badgeText")
+
+    if ($bitmap) {
+        # Image fuellt das gesamte Grid (48x48) und wird kreisrund geclippt.
+        # Clip-Koordinaten sind in Image-LOKALEN Koordinaten - da Image kein
+        # Margin hat, sind sie identisch mit den Grid-Koordinaten.
+        $image = $root.FindName("badgeImage")
+        $r = ($Size - 5.0) / 2.0   # Radius = halbe Groesse - StrokeThickness (=2.5)
+        $c = $Size / 2.0           # Mittelpunkt = halbe Groesse
+        $image.Clip   = New-Object System.Windows.Media.EllipseGeometry(
+            (New-Object System.Windows.Point($c, $c)), $r, $r)
+        $image.Source = $bitmap
+    } else {
+        # Emoji programmatisch setzen - umgeht XmlReader-Encoding-Probleme
+        # mit Surrogate-Pairs (z. B. 🌐, 💻).
+        if ($tb) { $tb.Text = $emoji }
+    }
+
+    # Hover-Farbe in Tag merken (Color-Struct, kein Brush)
+    $bConv     = [System.Windows.Media.BrushConverter]::new()
+    $fillBrush = $bConv.ConvertFromString($color)
+    $root.Tag  = ([System.Windows.Media.SolidColorBrush]$fillBrush).Color
+
+    # Hover: farbiger Glow auf der Disc + 1.08x Skalierung des Grids
+    $root.Add_MouseEnter({
+        $g = $args[0]
+        $d = $g.FindName("badgeDisc")
+        $e = New-Object System.Windows.Media.Effects.DropShadowEffect
+        $e.BlurRadius  = 18
+        $e.ShadowDepth = 0
+        $e.Opacity     = 0.85
+        $e.Color       = $g.Tag
+        $d.Effect      = $e
+        if ($g.RenderTransform -is [System.Windows.Media.ScaleTransform]) {
+            $g.RenderTransform.ScaleX = 1.08
+            $g.RenderTransform.ScaleY = 1.08
+        }
+    })
+    $root.Add_MouseLeave({
+        $g = $args[0]
+        $d = $g.FindName("badgeDisc")
+        $e = New-Object System.Windows.Media.Effects.DropShadowEffect
+        $e.BlurRadius  = 10
+        $e.ShadowDepth = 2
+        $e.Direction   = 270
+        $e.Opacity     = 0.40
+        $e.Color       = [System.Windows.Media.ColorConverter]::ConvertFromString("#000000")
+        $d.Effect      = $e
+        if ($g.RenderTransform -is [System.Windows.Media.ScaleTransform]) {
+            $g.RenderTransform.ScaleX = 1.0
+            $g.RenderTransform.ScaleY = 1.0
+        }
+    })
+
+    return $root
+}
+
 function New-MetaChip {
     param([string]$Text, [string]$BgHex)
     $conv   = [System.Windows.Media.BrushConverter]::new()
@@ -841,10 +1055,27 @@ function Add-ToolListItem {
     $item.Style = $Script:window.FindResource("ToolItem")
     $item.Tag   = $Tool
 
+    # 2-Spalten-Grid: Badge | Texte
+    $grid = New-Object System.Windows.Controls.Grid
+    $colBadge = New-Object System.Windows.Controls.ColumnDefinition
+    $colBadge.Width = [System.Windows.GridLength]::Auto
+    $colText  = New-Object System.Windows.Controls.ColumnDefinition
+    $colText.Width  = New-Object System.Windows.GridLength(1, [System.Windows.GridUnitType]::Star)
+    $grid.ColumnDefinitions.Add($colBadge) | Out-Null
+    $grid.ColumnDefinitions.Add($colText)  | Out-Null
+
+    $badge = New-ToolBadge -Tool $Tool -Size 40
+    $badge.Margin = New-Object System.Windows.Thickness(0, 0, 14, 0)
+    [System.Windows.Controls.Grid]::SetColumn($badge, 0)
+    $grid.Children.Add($badge) | Out-Null
+    # Hover-Glow + ScaleTransform werden zentral in New-ToolBadge gesetzt.
+
     $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.VerticalAlignment = "Center"
+    [System.Windows.Controls.Grid]::SetColumn($sp, 1)
 
     $nameBlock              = New-Object System.Windows.Controls.TextBlock
-    $nameBlock.Text         = "$($Tool.icon)  $($Tool.name)"
+    $nameBlock.Text         = [string]$Tool.name
     $nameBlock.FontSize     = 13
     $nameBlock.FontWeight   = "SemiBold"
     $nameBlock.Foreground   = "#E2EAF2"
@@ -855,15 +1086,17 @@ function Add-ToolListItem {
         "hta"   { "HTA-Anwendung"  }
         default { "PowerShell"     }
     }
-    $typeBlock           = New-Object System.Windows.Controls.TextBlock
-    $typeBlock.Text      = $typeLabel
-    $typeBlock.FontSize  = 11
-    $typeBlock.Foreground = "#4A6A85"
-    $typeBlock.Margin    = New-Object System.Windows.Thickness(0, 2, 0, 0)
+    $typeBlock            = New-Object System.Windows.Controls.TextBlock
+    $typeBlock.Text       = $typeLabel
+    $typeBlock.FontSize   = 11
+    $typeBlock.Foreground = "#7C9AB8"
+    $typeBlock.Margin     = New-Object System.Windows.Thickness(0, 2, 0, 0)
 
     $sp.Children.Add($nameBlock) | Out-Null
     $sp.Children.Add($typeBlock) | Out-Null
-    $item.Content = $sp
+    $grid.Children.Add($sp) | Out-Null
+
+    $item.Content = $grid
     $Script:toolList.Items.Add($item) | Out-Null
 }
 
@@ -988,7 +1221,8 @@ function Show-ToolDetails {
     $Script:welcomePanel.Visibility = "Collapsed"
     $Script:detailScroll.Visibility = "Visible"
 
-    $Script:detailTitle.Text = "$($Tool.icon)  $($Tool.name)"
+    $Script:detailTitle.Text = [string]$Tool.name
+    $Script:detailBadgeHost.Content = New-ToolBadge -Tool $Tool -Size 54
 
     # Meta-Chips
     $Script:detailMeta.Children.Clear()
@@ -997,7 +1231,7 @@ function Show-ToolDetails {
         "hta"   { "HTA-Anwendung" }
         default { "PowerShell"    }
     }
-    $Script:detailMeta.Children.Add((New-MetaChip -Text $catText -BgHex "#1E6DB5")) | Out-Null
+    $Script:detailMeta.Children.Add((New-MetaChip -Text $catText -BgHex (Get-ToolBadgeColor -Tool $Tool))) | Out-Null
 
     $versionDisplay = ""
     if ($Tool.version -and $Tool.version -ne "") {
@@ -1968,7 +2202,58 @@ function Show-SettingsDialog {
                 </Grid>
 
                 <TextBlock Style="{StaticResource Lbl}" Text="Icon (Emoji)"/>
-                <TextBox x:Name="txtIcon" Style="{StaticResource Txt}" MaxLength="4"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBox x:Name="txtIcon"
+                                 Style="{StaticResource Txt}" MaxLength="4"
+                                 VerticalAlignment="Top"/>
+                        <TextBlock Style="{StaticResource Lbl}"
+                                   Text="Bild (optional, .ico/.png/.jpg)"
+                                   Margin="0,8,0,3"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" x:Name="txtIconPath"
+                                     Style="{StaticResource Txt}"
+                                     IsReadOnly="True" Background="#F1F5F9"/>
+                            <Button Grid.Column="1" x:Name="btnIconBrowse"
+                                    Content="..."
+                                    Style="{StaticResource Btn}" Background="#64748B"
+                                    Margin="6,0,0,0" Padding="10,6"
+                                    ToolTip="Bild auswaehlen"/>
+                            <Button Grid.Column="2" x:Name="btnIconClear"
+                                    Content="X"
+                                    Style="{StaticResource Btn}" Background="#94A3B8"
+                                    Margin="6,0,0,0" Padding="10,6"
+                                    ToolTip="Bild entfernen"/>
+                        </Grid>
+                        <TextBlock FontSize="11" Foreground="#94A3B8"
+                                   Margin="0,4,0,0" TextWrapping="Wrap"
+                                   Text="Bild ueberschreibt das Emoji. Relative Pfade beziehen sich auf den Skript-Ordner."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="16,0,4,0"
+                                VerticalAlignment="Top">
+                        <Border BorderBrush="#CBD5E1" BorderThickness="1"
+                                CornerRadius="8" Padding="10,8" Background="#F8FAFC">
+                            <StackPanel>
+                                <ContentControl x:Name="iconPreviewHost"
+                                                HorizontalAlignment="Center"
+                                                Width="48" Height="48"/>
+                                <TextBlock Text="Live-Vorschau"
+                                           FontSize="11" Foreground="#94A3B8"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
 
                 <TextBlock Style="{StaticResource Lbl}" Text="Tags (Komma-getrennt)"/>
                 <TextBox x:Name="txtTags" Style="{StaticResource Txt}"/>
@@ -2048,6 +2333,10 @@ function Show-SettingsDialog {
     $sTxtPth    = $sWin.FindName("txtPath")
     $sBtnBrw    = $sWin.FindName("btnBrowse")
     $sTxtIco    = $sWin.FindName("txtIcon")
+    $sTxtIcoPath = $sWin.FindName("txtIconPath")
+    $sBtnIcoBrw  = $sWin.FindName("btnIconBrowse")
+    $sBtnIcoClr  = $sWin.FindName("btnIconClear")
+    $sIcoPrev   = $sWin.FindName("iconPreviewHost")
     $sTxtTags   = $sWin.FindName("txtTags")
     $sTxtVer    = $sWin.FindName("txtVersion")
     $sDpDate    = $sWin.FindName("dpVersionDate")
@@ -2079,6 +2368,21 @@ function Show-SettingsDialog {
         }
     }
 
+    # Live-Vorschau-Badge im Einstellungen-Dialog aktualisieren.
+    function S-UpdateIconPreview {
+        $typeKey = switch ($sCmbTyp.SelectedIndex) {
+            1       { "hta" }
+            2       { "web" }
+            default { "powershell" }
+        }
+        $previewTool = [PSCustomObject]@{
+            icon     = $sTxtIco.Text
+            iconPath = $sTxtIcoPath.Text
+            type     = $typeKey
+        }
+        $sIcoPrev.Content = New-ToolBadge -Tool $previewTool -Size 48
+    }
+
     function S-UpdatePathLabel {
         $sLblPath.Text = switch ($sCmbTyp.SelectedIndex) {
             1       { "Pfad zur .hta" }
@@ -2092,6 +2396,7 @@ function Show-SettingsDialog {
         $sTxtNam.Text          = ""
         $sTxtPth.Text          = ""
         $sTxtIco.Text          = ""
+        $sTxtIcoPath.Text      = ""
         $sTxtTags.Text         = ""
         $sTxtVer.Text          = ""
         $sDpDate.SelectedDate  = $null
@@ -2109,9 +2414,10 @@ function Show-SettingsDialog {
 
     function S-LoadForm {
         param($t)
-        $sTxtNam.Text = $t.name
-        $sTxtIco.Text = $t.icon
-        $sTxtDsc.Text = $t.description
+        $sTxtNam.Text     = $t.name
+        $sTxtIco.Text     = $t.icon
+        $sTxtIcoPath.Text = if ($t.iconPath) { [string]$t.iconPath } else { "" }
+        $sTxtDsc.Text     = $t.description
         $sTxtTags.Text = if ($t.tags) { $t.tags -join ", " } else { "" }
         $sTxtVer.Text  = if ($t.version) { $t.version } else { "" }
         $sTxtDoc.Text  = if ($t.doc)     { $t.doc     } else { "" }
@@ -2137,7 +2443,18 @@ function Show-SettingsDialog {
         $sTxtPth.Text = if ($t.type -eq "web") { $t.url } else { $t.path }
     }
 
-    $sCmbTyp.Add_SelectionChanged({ S-UpdatePathLabel })
+    $sCmbTyp.Add_SelectionChanged({ S-UpdatePathLabel; S-UpdateIconPreview })
+    $sTxtIco.Add_TextChanged({ S-UpdateIconPreview })
+    $sTxtIcoPath.Add_TextChanged({ S-UpdateIconPreview })
+
+    $sBtnIcoBrw.Add_Click({
+        $ofd = New-Object System.Windows.Forms.OpenFileDialog
+        $ofd.Filter = "Bilder/Icons (*.ico;*.png;*.jpg;*.jpeg;*.bmp)|*.ico;*.png;*.jpg;*.jpeg;*.bmp|Alle Dateien (*.*)|*.*"
+        $ofd.Title  = "Bild fuer Tool-Badge auswaehlen"
+        if ($ofd.ShowDialog() -eq "OK") { $sTxtIcoPath.Text = $ofd.FileName }
+    })
+
+    $sBtnIcoClr.Add_Click({ $sTxtIcoPath.Text = "" })
 
     $sLst.Add_SelectionChanged({
         $i = $sLst.SelectedIndex
@@ -2273,6 +2590,10 @@ function Show-SettingsDialog {
             doc         = $sTxtDoc.Text
             images      = @($rawImgs)
         }
+        $iconPathTrim = $sTxtIcoPath.Text.Trim()
+        if ($iconPathTrim) {
+            $entry | Add-Member -MemberType NoteProperty -Name "iconPath" -Value $iconPathTrim
+        }
         if ($type -eq "web") {
             $entry | Add-Member -MemberType NoteProperty -Name "url"  -Value $sTxtPth.Text.Trim()
         } else {
@@ -2291,6 +2612,7 @@ function Show-SettingsDialog {
     $sBtnCls.Add_Click({ $sWin.Close() })
 
     S-RefreshList
+    S-UpdateIconPreview
     $sWin.ShowDialog() | Out-Null
 }
 

@@ -3,6 +3,12 @@
 Hier landen alle wichtigen Aenderungen am JC Dashboard.
 Eintraege koennen ueber den Knopf **Bearbeiten** direkt in der App erweitert oder im Texteditor in `src/changes.md` gepflegt werden.
 
+## 2026-05-20 (Tool-Badge-Fix)
+- **Fix**: Emojis und optionale Bilder werden jetzt korrekt im farbigen Kreis-Badge dargestellt (Tool-Liste + Live-Vorschau im Einstellungen-Dialog).
+- **Ursache**: `[string]$OverrideIcon = $null` wurde durch PowerShells Typ-Cast zu `""`, sodass `$Tool.icon` nie ausgelesen wurde. Check auf `IsNullOrEmpty` korrigiert.
+- **Robustheit**: Emoji-Text wird jetzt programmatisch per `$tb.Text = $emoji` gesetzt statt als XAML-Attribut, um Surrogate-Pair-Encoding-Verluste beim XmlReader zu vermeiden.
+- **Lesbarkeit**: Kleiner DropShadow auf dem Badge-TextBlock fuer besseren Kontrast auf farbigen Kreisen.
+
 ## 2026-05-19 (Hilfe-Bibliothek)
 - **Hilfe-Hub** mit Sidebar: Hilfe-Dialog verwaltet jetzt beliebig viele Markdown-Dokumente unter `src/help/` statt nur einer einzelnen Datei.
 - **Sidebar-Aktionen**: **+ Neu**, **Umbenennen** und **Loeschen** direkt im Hilfe-Dialog; Suchfeld filtert die Dokumentliste live.
