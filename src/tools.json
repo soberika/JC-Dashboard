@@ -126,6 +126,23 @@
                                      }
                                  ],
                       "path":  "C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta"
+                  },
+                  {
+                      "id":  "ordnerstruktur_auslesen",
+                      "name":  "Ordnerstruktur Auslesen",
+                      "type":  "powershell",
+                      "icon":  "?",
+                      "description":  "",
+                      "tags":  [
+
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Ordnerstruktur\\Get-FolderStructure.ps1"
                   }
               ]
 }
