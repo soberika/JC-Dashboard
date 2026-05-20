@@ -1377,7 +1377,11 @@ function Start-Tool {
         $path = if ([System.IO.Path]::IsPathRooted($Tool.path)) {
             $Tool.path } else { Join-Path $Script:ScriptDir $Tool.path }
         if (Test-Path $path) {
-            Start-Process $path
+            if ($Tool.type -eq "powershell") {
+                Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -NoProfile -File `"$path`""
+            } else {
+                Start-Process $path
+            }
             Update-LastUsed -ToolId $Tool.id
             if ($Script:CurrentMode -eq "recent") { Build-ToolList -Mode "recent" }
         } else {
