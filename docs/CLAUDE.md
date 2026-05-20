@@ -12,11 +12,12 @@ Eine **konfigurierbare WPF-GUI** als zentrale Steuerzentrale für verschiedene T
 3. **Single-Maintainer**: Code muss einfach und lesbar bleiben. Keine unnötige Abstraktion.
 4. **Konfigurierbarkeit hat Priorität**: Neue Tools kommen über den Einstellungen-Dialog + `tools.json`. Nie hardcoded.
 5. **PowerShell 5.1 kompatibel** halten. Kein PS 7-only Syntax.
-6. **Kein Emoji und keine HTML-Entities** direkt in PowerShell-Strings — nur in XAML-Here-Strings (`@'...'@`), wo XamlReader sie verarbeitet.
-7. **Alle UI-Variablen mit `$Script:` prefixen** (`$Script:window`, `$Script:toolList` etc.), damit sie aus WPF-Event-Handlern und Funktionen heraus erreichbar sind.
-8. **Keine Closures via `.GetNewClosure()`** für WPF-Click-Handler. Stattdessen Tool-Daten im `.Tag` des Buttons speichern, per `$args[0].Tag` abrufen.
-9. **JSON-Pfade**: Windows-Backslashes in `tools.json` müssen escaped sein (`C:\\Pfad\\Datei`). Der Einstellungen-Dialog macht das automatisch via `ConvertTo-Json`.
-10. Nach größeren Änderungen eine kurze Zusammenfassung schreiben.
+6. **Emojis nie als XAML-Attribut-Wert via String-Interpolation** — `XmlReader` verschluckt Surrogate-Pairs (z.B. 🌐, 💻). TextBlock stattdessen ohne `Text=`-Attribut im XAML anlegen und danach `$tb.Text = $emoji` programmatisch setzen.
+7. **`[string]$null`-Falle**: PowerShell castet `[string]$null` stillschweigend zu `""`. Bei optionalen String-Parametern deshalb immer `[string]::IsNullOrEmpty()` statt `$null -ne` prüfen — sonst greifen leere Override-Werte, obwohl kein Override übergeben wurde.
+8. **Alle UI-Variablen mit `$Script:` prefixen** (`$Script:window`, `$Script:toolList` etc.), damit sie aus WPF-Event-Handlern und Funktionen heraus erreichbar sind.
+9. **Keine Closures via `.GetNewClosure()`** für WPF-Click-Handler. Stattdessen Tool-Daten im `.Tag` des Buttons speichern, per `$args[0].Tag` abrufen.
+10. **JSON-Pfade**: Windows-Backslashes in `tools.json` müssen escaped sein (`C:\\Pfad\\Datei`). Der Einstellungen-Dialog macht das automatisch via `ConvertTo-Json`.
+11. Nach größeren Änderungen eine kurze Zusammenfassung schreiben.
 
 ---
 
@@ -55,7 +56,8 @@ JC-Dashboard/
 - **Zuletzt verwendet**: zeigt die fünf zuletzt gestarteten Tools, persistiert in `usage.json`
 - **Alle Tools (A-Z)** mit Suchfeld über Name, Tags, Beschreibung und Doku
 - **Detail-Pane**: Tags, Version + Versionsdatum, Markdown-Doku, Bilder-Galerie mit Lightbox-Zoom
-- **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen inkl. Tags, Version, Doku, Bildern → speichert sofort in `tools.json` + aktualisiert Sidebar
+- **Tool-Badges**: farbige Kreise mit Emoji (aus `tools.json`-Feld `icon`) oder optionalem Bild (`iconPath`). Badge-Größe skaliert mit Kontext (Tool-Liste 40px, Detail-Header 54px, Einstellungen-Vorschau 48px). Hover-Effekt (Glow + 1.08× Scale).
+- **Einstellungen-Dialog**: Tools hinzufügen / bearbeiten / löschen inkl. Tags, Version, Doku, Bildern, Icon-Emoji und optionalem Bild-Pfad → speichert sofort in `tools.json` + aktualisiert Sidebar
 - **Hilfe-Dialog** (Pop-up, Hub-Layout): linke Sidebar listet alle `.md`-Dateien aus `src/help/`, rechts die Lese-/Bearbeiten-Ansicht. **Neu / Umbenennen / Loeschen** direkt in der Sidebar, **Bearbeiten/Speichern** persistiert die jeweilige Datei. Reihenfolge per Dateinamen-Praefix (`01_`, `02_`).
 - **Änderungsprotokoll-Dialog**: gleicher generischer `Show-MarkdownDocDialog`, Inhalt in `src/changes.md`
 - **Dark-Mode-Switch**: ☾/☀-Icon in der Bottom-Bar; Brushes via `DynamicResource`, Apply-Theme tauscht zur Laufzeit, Auswahl in `prefs.json` persistiert
@@ -64,7 +66,7 @@ JC-Dashboard/
 
 ### Bekannte Einschränkungen
 - Web-Tools öffnen im Standard-Browser (kein eingebetteter Browser). Ein WebView2-Upgrade wurde versucht, aber verworfen da zu komplex für den aktuellen Einsatzzweck.
-- Icons in der Sidebar kommen aus dem `icon`-Feld in `tools.json` (Emoji). Emoji werden in PS-Strings nicht direkt geschrieben — nur aus JSON gelesen und im WPF-TextBlock angezeigt.
+- WPF rendert `Segoe UI Emoji` nur monochrom (keine Color-Emoji). Emojis erscheinen als weiße Silhouetten auf dem farbigen Kreis — lesbar, aber nicht bunt.
 
 ### tools.json Schema
 ```json
@@ -75,7 +77,8 @@ JC-Dashboard/
       "name":        "Anzeigename",
       "type":        "powershell",
       "path":        "C:\\absoluter\\oder\\relativer\\Pfad.ps1",
-      "icon":        "?",
+      "icon":        "🛠️",
+      "iconPath":    "assets\\mein_icon.png",
       "description": "Kurzbeschreibung",
       "tags":        ["Demo", "Info"],
       "version":     "1.0.0",
@@ -90,12 +93,15 @@ JC-Dashboard/
       "name":        "Web Tool",
       "type":        "web",
       "url":         "https://example.com/",
-      "icon":        "?",
+      "icon":        "🌐",
       "description": "Eine Webanwendung"
     }
   ]
 }
 ```
+
+> `icon`: Emoji-Zeichen aus `tools.json` (direkt aus JSON gelesen, nie im PS-Code als Literal).  
+> `iconPath`: Optionaler Pfad zu einer Bilddatei (.png/.jpg/.ico) — wird kreisrund geclippt. Überschreibt das Emoji. Absolut oder relativ zum `src/`-Verzeichnis.
 
 ### Theme (Light / Dark)
 - Toggle ueber das Mond-/Sonne-Icon unten in Col1.

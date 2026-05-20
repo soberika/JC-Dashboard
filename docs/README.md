@@ -23,7 +23,8 @@ Das Dashboard dient als **Launcher und zentrale Übersicht**, nicht als Ersatz f
 - **PowerShell-** und **HTA-Tools** starten per `Start-Process`; Fehlermeldung wenn die Datei nicht gefunden wird
 - **Web-Tools** öffnen die URL im Standard-Browser des Systems
 - **Detail-Ansicht** mit Tags, Version, Markdown-Doku und Bilder-Galerie (Klick = Lightbox)
-- **Einstellungen-Dialog**: Tools hinzufügen, bearbeiten, löschen — inkl. Tags, Version, Doku, Bildern
+- **Tool-Badges**: farbige Kreise mit Emoji-Icon oder optionalem Bild (`iconPath`), Hover-Effekt (Glow + Skalierung)
+- **Einstellungen-Dialog**: Tools hinzufügen, bearbeiten, löschen — inkl. Tags, Version, Doku, Bildern, Icon-Emoji und Bild-Pfad mit Live-Vorschau
 - **Hilfe-Bibliothek**: mehrere Markdown-Dokumente unter `src/help/`, in der App **anlegen / umbenennen / loeschen / bearbeiten** (Dialog mit Sidebar + Reader/Editor)
 - **Änderungsprotokoll-Dialog** (`src/changes.md`), ebenfalls in der App editierbar
 - **Dark-Mode-Switch** unten in der Sidebar (☾/☀), Auswahl wird in `src/prefs.json` persistiert
@@ -66,7 +67,8 @@ Tools werden in `src/tools.json` gespeichert. Das Format:
       "name":        "Mein Tool",
       "type":        "powershell",
       "path":        "C:\\Pfad\\zum\\Skript.ps1",
-      "icon":        "?",
+      "icon":        "🛠️",
+      "iconPath":    "assets\\mein_icon.png",
       "description": "Kurzbeschreibung",
       "tags":        ["Demo"],
       "version":     "1.0.0",
@@ -78,7 +80,7 @@ Tools werden in `src/tools.json` gespeichert. Das Format:
       "name":        "Meine Web-App",
       "type":        "web",
       "url":         "https://example.com/",
-      "icon":        "?",
+      "icon":        "🌐",
       "description": "Eine Webanwendung"
     }
   ]

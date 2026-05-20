@@ -4,10 +4,15 @@ Hier landen alle wichtigen Aenderungen am JC Dashboard.
 Eintraege koennen ueber den Knopf **Bearbeiten** direkt in der App erweitert oder im Texteditor in `src/changes.md` gepflegt werden.
 
 ## 2026-05-20 (Tool-Badge-Fix)
-- **Fix**: Emojis und optionale Bilder werden jetzt korrekt im farbigen Kreis-Badge dargestellt (Tool-Liste + Live-Vorschau im Einstellungen-Dialog).
-- **Ursache**: `[string]$OverrideIcon = $null` wurde durch PowerShells Typ-Cast zu `""`, sodass `$Tool.icon` nie ausgelesen wurde. Check auf `IsNullOrEmpty` korrigiert.
-- **Robustheit**: Emoji-Text wird jetzt programmatisch per `$tb.Text = $emoji` gesetzt statt als XAML-Attribut, um Surrogate-Pair-Encoding-Verluste beim XmlReader zu vermeiden.
-- **Lesbarkeit**: Kleiner DropShadow auf dem Badge-TextBlock fuer besseren Kontrast auf farbigen Kreisen.
+
+**Symptom:** Tool-Badges zeigten nur den farbigen Kreis — weder Emoji noch optionales Bild wurden dargestellt (Tool-Liste und Live-Vorschau im Einstellungen-Dialog).
+
+**Ursache:** `[string]$OverrideIcon = $null` wird durch PowerShells Typ-Cast stillschweigend zu `""`. Da `"" -ne $null` in PowerShell `$true` ergibt, griff der Override-Zweig bei jedem Aufruf — auch ohne explizites `-OverrideIcon`. Dadurch wurde `$Tool.icon` nie ausgelesen.
+
+**Fixes:**
+- `$null -ne $OverrideIcon` → `[string]::IsNullOrEmpty($OverrideIcon)` (ebenso fuer `$OverrideIconPath`)
+- Emoji-Text jetzt programmatisch per `$tb.Text = $emoji` statt als XAML-Attribut — verhindert Encoding-Verlust von Surrogate-Pairs durch den `XmlReader`
+- Kleiner `DropShadowEffect` auf dem Badge-TextBlock fuer besseren Kontrast auf hellen Kreisfarben
 
 ## 2026-05-19 (Hilfe-Bibliothek)
 - **Hilfe-Hub** mit Sidebar: Hilfe-Dialog verwaltet jetzt beliebig viele Markdown-Dokumente unter `src/help/` statt nur einer einzelnen Datei.
