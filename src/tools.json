@@ -143,6 +143,25 @@
 
                                  ],
                       "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Ordnerstruktur\\Get-FolderStructure.ps1"
+                  },
+                  {
+                      "id":  "datenabgleich_auswertung_in_teamordner_schieben",
+                      "name":  "Datenabgleich Auswertung in Teamordner schieben",
+                      "type":  "powershell",
+                      "icon":  "§58",
+                      "description":  "Verschiebt die Auswertungen des Datenabgleiches in die zuständigen Teamordner",
+                      "tags":  [
+                                   "quartalsweise",
+                                   "monatlich",
+                                   "Datenabgleich"
+                               ],
+                      "version":  "1.0",
+                      "versionDate":  "2026-05-20",
+                      "doc":  "# Invoke-DatenabgleichVerteilung.ps1\r\n\r\n## Zweck\r\n\r\nVerteilt die quartalsweise bereitgestellten **Datenabgleich-XLSX-Dateien** (§ 52 SGB II) automatisiert aus dem zentralen Quellpfad in die jeweiligen **Team-Netzwerkordner** auf `\\\\vjc`.\r\n\r\nErsetzt das manuelle Kopieren von ~50 Dateien in 8 verschiedene Teamverzeichnisse.\r\n\r\n---\r\n\r\n## Wann wird das Skript ausgeführt?\r\n\r\n**Einmal pro Quartal** – jeweils nach Bereitstellung der neuen Datenabgleich-Dateien im Quellverzeichnis.  \r\nDas Skript ermittelt automatisch das **vorherige Quartal** (aktuelles Quartal − 1) und fragt zur Sicherheit nach.\r\n\r\n---\r\n\r\n## Was macht das Skript – Schritt für Schritt?\r\n\r\n| Schritt | Aktion |\r\n|---------|--------|\r\n| 1 | Quartal und Jahr automatisch ermitteln (z. B. Mai 2026 → Q1 2026) |\r\n| 2 | Rückfrage: Ist Jahr/Quartal korrekt? Manuelle Korrektur möglich |\r\n| 3 | Quelldateien im Pfad `\\JJJJ\\QN\\` einlesen (`JJJJ_QN_XXXX.xlsx`) |\r\n| 4 | Zuordnung der Dateien zu Teams anhand der ersten zwei Ziffern der Kennziffer |\r\n| 5 | **Vorschau** des Kopierplans, gruppiert nach Zielordner, mit Hinweis auf bereits vorhandene Dateien |\r\n| 6 | Bestätigung abwarten – erst dann werden Dateien angefasst |\r\n| 7 | Zielordner ggf. automatisch anlegen und Dateien kopieren |\r\n| 8 | Zusammenfassung: Erfolge, Fehler, nicht zugeordnete Dateien |\r\n\r\n---\r\n\r\n## Teamzuordnung (Kennziffer → Zielordner)\r\n\r\n| Präfix | Team | Zielpfad |\r\n|--------|------|----------|\r\n| `11__` | Team 1 | `\\\\vjc\\GB2_Team_1\\_alle\\Datenabgleich\\` |\r\n| `22__` | Team 2 | `\\\\vjc\\GB2_Team_2\\_alle\\Datenabgleich\\` |\r\n| `13__` | Team 3 | `\\\\vjc\\GB2_Team_3\\_alle\\Datenabgleich\\` |\r\n| `24__` | Team 4 | `\\\\vjc\\GB2_Team_4\\_Alle\\Datenabgleich § 52 SGB II\\` |\r\n| `36__` | Team 6 | `\\\\vjc\\GB2_Team_6\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `38__` | Team 8 | `\\\\vjc\\GB2_Team_8\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `49__` | Team 9 | `\\\\vjc\\GB2_Team_9\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `40__` | Team 10 | `\\\\vjc\\GB2_Team_10\\2_SB\\SB_Listen\\Datenabgleich § 52 SGB II\\` |\r\n\r\nDie Dateien werden jeweils in einen Unterordner `\\JJJJ\\QN\\` im Zielverzeichnis kopiert (wird automatisch erstellt).\r\n\r\n---\r\n\r\n## Voraussetzungen\r\n\r\n- PowerShell 5.1 (Desktop Edition)\r\n- Lesezugriff auf den Quellpfad\r\n- Schreibzugriff auf alle Team-Zielordner unter `\\\\vjc\\`\r\n- Dateibenennung muss dem Schema `JJJJ_QN_XXXX.xlsx` entsprechen\r\n\r\n---\r\n\r\n## Konfiguration\r\n\r\nAm Anfang des Skripts befindet sich der einzige anzupassende Parameter:\r\n\r\n```powershell\r\n$QuellBasisPfad = \u0027\\\\vjc\\Freigabe\\Datenabgleich\u0027   # Wurzelpfad mit JJJJ\\QN\\-Struktur\r\n```\r\n\r\nNeue Teams oder geänderte Zielpfade werden in der `$Teamzuordnung`-Hashtable gepflegt.\r\n\r\n---\r\n\r\n## Speicherort\r\n\r\n```\r\n\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Auswertung Datenabgleich verschieben\\\r\n```\r\n\r\n---\r\n\r\n*Erstellt: Mai 2026 | Zuständig: GB1 Systembetreuung*",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Auswertung Datenabgleich verschieben\\Invoke-DatenabgleichVerteilung.ps1"
                   }
               ]
 }
