@@ -49,7 +49,9 @@
                       "version":  "",
                       "versionDate":  "",
                       "doc":  "# Aufgabenplanung\n\nOeffnet die Windows-**Aufgabenplanung** (`taskschd.msc`) direkt.\n\n## Wofuer?\n- Geplante Tasks anzeigen, bearbeiten und manuell ausfuehren\n- Status von Skript-Automatisierungen pruefen (z. B. Datenabgleich-Laeufe)\n- Neue geplante Aufgaben anlegen\n\n## Hinweis\nBenoetigte Rechte: lokaler Administrator oder Delegierung ueber Gruppenrichtlinie.",
-                      "images":  [],
+                      "images":  [
+
+                                 ],
                       "path":  "C:\\Windows\\System32\\taskschd.msc"
                   },
                   {
@@ -65,7 +67,9 @@
                       "version":  "",
                       "versionDate":  "",
                       "doc":  "# AD-Admin-Konsole (JC)\n\nOeffnet die vorkonfigurierte **MMC-Snap-In-Datei** `g_JCadmin-OU.msc` fuer die Jobcenter-spezifische Organisationseinheit im Active Directory.\n\n## Lage der Datei\n`\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc`\n\n## Wofuer?\n- Benutzerkonten anlegen, sperren, entsperren\n- Gruppen- und Rechteverwaltung innerhalb der JC-OU\n- Passwort-Resets und Konto-Eigenschaften\n\n## Hinweis\nErfordert AD-Adminrechte. Nur auf zugelassenen Admin-Workstations verwenden.",
-                      "images":  [],
+                      "images":  [
+
+                                 ],
                       "path":  "\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc"
                   },
                   {
@@ -81,7 +85,9 @@
                       "version":  "",
                       "versionDate":  "",
                       "doc":  "# OPEN PROSOZ Einzelfallbearbeitung\n\nStartet **OPEN PROSOZ** ueber die installierte Startmenue-Verkuepfung (`.lnk`).\n\n## Pfad der Verkuepfung\n`C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk`\n\n## Hinweise\n- Die Verkuepfung zeigt auf die tatsaechliche Installationsdatei — der Pfad muss bei Updates nicht geaendert werden\n- `.lnk`-Dateien werden von Windows genauso wie `.exe`-Dateien behandelt und direkt gestartet\n- Anmeldung mit dem persoenlichen JC-Nutzeraccount",
-                      "images":  [],
+                      "images":  [
+
+                                 ],
                       "path":  "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk"
                   },
                   {
@@ -98,7 +104,9 @@
                       "version":  "",
                       "versionDate":  "",
                       "doc":  "# Prosoz-Update-Verzeichnis\n\nOeffnet den freigegebenen Netzwerkordner mit den aktuellen **PROSOZ-Installationspaketen** direkt im Windows Explorer.\n\n## Pfad\n`\\\\172.31.3.32\\open_update\\PROSOZ_Updates`\n\n## Inhalt\n- Installationspakete fuer OPEN PROSOZ-Updates\n- Bereitgestellt vom PROSOZ-Hersteller oder der zentralen IT\n\n## Hinweise\n- Netzwerkverbindung zu `172.31.3.32` notwendig\n- Schreibzugriff nur fuer berechtigte Admins; Lesezugriff fuer alle Systembetreuer",
-                      "images":  [],
+                      "images":  [
+
+                                 ],
                       "path":  "\\\\172.31.3.32\\open_update\\PROSOZ_Updates"
                   },
                   {
@@ -286,6 +294,23 @@
 
                                  ],
                       "path":  "\\\\vjc\\SOZIAL-Portal\\Dateien\\Systembetreuung\\Profilspeicher_optimieren\\_Systemer\\ProfilspeicherSystemer.ps1"
+                  },
+                  {
+                      "id":  "remote_support",
+                      "name":  "Remote-Support",
+                      "type":  "powershell",
+                      "icon":  "🕵️",
+                      "description":  "Auf Bildschirm der Mitarbeiter zuschalten",
+                      "tags":  [
+                                   "First-Level-Support"
+                               ],
+                      "version":  "3.0",
+                      "versionDate":  "2026-05-21",
+                      "doc":  "# TSJC Remote Support Tool\r\n \r\nDieses Tool ermoeglicht Support-Mitarbeitern, Benutzersessions auf den Teamservern zu finden und per **Microsoft Remote Assistance (MSRA)** eine Fernhilfe-Verbindung anzubieten.\r\n \r\n## Startmodus waehlen\r\n \r\nBeim Start erscheint folgende Eingabeaufforderung:\r\n \r\n`Eingabe  [ leer = ALLE | f = Nachname | p = PC-Direktverbindung ]`\r\n \r\n- **Leer lassen + Enter** — listet alle aktuell angemeldeten Benutzer auf allen 9 Servern auf.\r\n- **f** — Suche nach Benutzername anhand eines Nachnamens (oder Teils davon).\r\n- **p** — Direkte Verbindung zu einem Client-PC (z.B. PC3397, IGEL0670, LT376).\r\n## Nachnamenssuche (f)\r\n \r\n1. `f` eingeben und Enter druecken.\r\n2. Nachnamen oder Namensteil eingeben (z.B. `baumgart`).\r\n3. Das Tool fragt die interne API ab und zeigt gefundene Benutzernamen an.\r\n4. Bei einem Treffer: mit Enter bestaetigen oder anderen Namen eingeben.\r\n5. Bei mehreren Treffern: Nummer eingeben oder Namen direkt tippen.\r\n## PC-Direktverbindung (p)\r\n \r\n1. `p` eingeben und Enter druecken.\r\n2. PC-Nummer oder Namensteil eingeben (z.B. `3397` oder `LT376`).\r\n3. Das Tool prueft automatisch alle bekannten Praefix-Varianten:\r\n   - `PC3397`\r\n   - `IGEL3397`\r\n   - `LT3397`\r\n4. Erreichbare PCs werden aufgelistet — Nummer auswaehlen.\r\n5. Das Tool prueft dann die aktive Session und startet MSRA.\r\n## MSRA starten\r\n \r\nNach einer erfolgreichen Suche (Terminalserver oder PC):\r\n \r\n- Bei **genau einer** aktiven Sitzung: Bestaetigung mit Enter startet MSRA sofort.\r\n- Bei **mehreren** aktiven Sitzungen: Nummer des gewuenschten Servers eingeben.\r\n- Der **Benutzer muss die eingehende Anfrage aktiv annehmen** — MSRA startet auf seiner Seite einen Dialog.\r\n## Bekannte Praefixe (PC-Suche)\r\n \r\n| Praefix | Beispiel    | Geraetetyp          |\r\n|---------|-------------|---------------------|\r\n| PC      | PC3397      | Desktop-PC          |\r\n| IGEL    | IGEL0670    | Thin Client (IGEL)  |\r\n| LT      | LT376       | Laptop              |\r\n \r\n## Statusanzeige (Terminalserver-Suche)\r\n \r\n| Status              | Bedeutung                                      |\r\n|---------------------|------------------------------------------------|\r\n| Angemeldet          | Benutzer hat aktive Session auf diesem Server  |\r\n| Nicht angemeldet    | Kein Treffer fuer diesen Benutzer              |\r\n| Nicht erreichbar    | Server antwortet nicht (RPC-Fehler o.ae.)      |\r\n| Timeout             | Server hat nicht innerhalb von 8 Sekunden geantwortet |\r\n \r\n## Logging\r\n \r\nJede Sitzung wird automatisch protokolliert unter:\r\n \r\n`%APPDATA%\\TSJC-Support\\Logs\\JJJJ-MM-TT.log`\r\n \r\nEingetragen werden: Suchvorgaenge, gefundene Sessions, gestartete MSRA-Verbindungen und Fehler.\r\n \r\n## Tipps\r\n \r\n- Bei **Encoding-Problemen** in der Konsole (Umlaute als Fragezeichen): PowerShell-Fenster mit UTF-8 starten: `chcp 65001`.\r\n- MSRA benoetigt, dass auf dem Zielrechner ein **Benutzer angemeldet** ist — sonst laeuft die Anfrage ins Leere.\r\n- Den **vollstaendigen PC-Namen** (z.B. `LT376`) kann man bei der PC-Suche auch direkt eingeben, wenn der Ping-Treffer ausbleibt.\r\n- Die Serverliste und Praefix-Liste sind im Skript-Kopf unter `$script:Config` zentral konfigurierbar.\r\n ",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Remote-Sitzung\\TSJC-RemoteSupport.ps1"
                   }
               ]
 }
