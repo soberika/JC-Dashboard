@@ -1816,6 +1816,12 @@ function HelpHub-ExitEdit {
 }
 
 function Show-HelpHubDialog {
+    # Fenster bereits offen? Nur in den Vordergrund bringen.
+    if ($Script:HelpHubWin -and $Script:HelpHubWin.IsVisible) {
+        $Script:HelpHubWin.Activate()
+        return
+    }
+
     Initialize-HelpDocs
 
     [xml]$HXaml = @"
@@ -2141,7 +2147,7 @@ function Show-HelpHubDialog {
 
     $Script:HelpHubBtnClose.Add_Click({ $Script:HelpHubWin.Close() })
 
-    $Script:HelpHubWin.ShowDialog() | Out-Null
+    $Script:HelpHubWin.Show()
 }
 
 function Show-HelpDialog { Show-HelpHubDialog }
