@@ -1,0 +1,122 @@
+# JC-Dashboard
+
+**Zentrale Steuerzentrale für Prozesse und Tools**  
+Eine einfache, konfigurierbare WPF-GUI, die bestehende Anwendungen und Skripte zentral startet und verwaltet — ohne sie neu programmieren zu müssen.
+
+---
+
+## Ziel
+
+Viele kleine Tools und Prozesse (PowerShell-Skripte, HTA-Anwendungen, Web-Apps) sollen über **eine übersichtliche Oberfläche** gestartet und verwaltet werden können. Neue Tools sollen **nur noch über die Einstellungen** hinzugefügt werden — ohne Code zu ändern.
+
+Das Dashboard dient als **Launcher und zentrale Übersicht**, nicht als Ersatz für die bestehenden Tools.
+
+---
+
+## Features
+
+- **3-Spalten-Layout**: Modus-Auswahl, Tool-Liste, Detail-Pane
+- **Startseite-Button** oben links mit Willkommens-Pane und Hilfe-Zugang
+- **Bottom-Icon-Bar** in der Sidebar mit ⚙ Einstellungen, ❔ Hilfe, 📝 Änderungen und ☾/☀ Theme-Toggle
+- **Zuletzt verwendet** zeigt die fünf zuletzt gestarteten Tools (persistiert in `usage.json`)
+- **Alle Tools (A-Z)** mit Suchfeld über Name, Tags, Beschreibung und Doku
+- **PowerShell-** und **HTA-Tools** starten per `Start-Process`; Fehlermeldung wenn die Datei nicht gefunden wird
+- **Web-Tools** öffnen die URL im Standard-Browser des Systems
+- **Detail-Ansicht** mit Tags, Version, Markdown-Doku und Bilder-Galerie (Klick = Lightbox)
+- **Tool-Badges**: farbige Kreise mit Emoji-Icon oder optionalem Bild (`iconPath`), Hover-Effekt (Glow + Skalierung)
+- **Einstellungen-Dialog**: Tools hinzufügen, bearbeiten, löschen — inkl. Tags, Version, Doku, Bildern, Icon-Emoji und Bild-Pfad mit Live-Vorschau
+- **Hilfe-Bibliothek**: mehrere Markdown-Dokumente unter `src/help/`, in der App **anlegen / umbenennen / loeschen / bearbeiten** (Dialog mit Sidebar + Reader/Editor)
+- **Änderungsprotokoll-Dialog** (`src/changes.md`), ebenfalls in der App editierbar
+- **Dark-Mode-Switch** unten in der Sidebar (☾/☀), Auswahl wird in `src/prefs.json` persistiert
+- **Werkseinstellungen**: setzt alle Tools auf Beispiel-Einträge zurück (mit Bestätigungsdialog)
+- Konfiguration komplett über `src/tools.json` — kein Code-Änderung nötig
+
+---
+
+## Technologie
+
+- **WPF** (PowerShell 5.1, keine externen Abhängigkeiten)
+- Konfigurierbar über `tools.json` + Einstellungen-Dialog
+
+---
+
+## Schnellstart
+
+```powershell
+# Rechtsklick auf Start-Dashboard.ps1 → "Mit PowerShell ausführen"
+src\Start-Dashboard.ps1
+```
+
+Oder direkt in PowerShell:
+
+```powershell
+& ".\src\Start-Dashboard.ps1"
+```
+
+---
+
+## tools.json
+
+Tools werden in `src/tools.json` gespeichert. Das Format:
+
+```json
+{
+  "tools": [
+    {
+      "id":          "mein_tool",
+      "name":        "Mein Tool",
+      "type":        "powershell",
+      "path":        "C:\\Pfad\\zum\\Skript.ps1",
+      "icon":        "🛠️",
+      "iconPath":    "assets\\mein_icon.png",
+      "description": "Kurzbeschreibung",
+      "tags":        ["Demo"],
+      "version":     "1.0.0",
+      "versionDate": "2026-01-15",
+      "doc":         "# Markdown-Doku\n\nUnterstuetzt **Fett**, Listen, Links."
+    },
+    {
+      "id":          "meine_webapp",
+      "name":        "Meine Web-App",
+      "type":        "web",
+      "url":         "https://example.com/",
+      "icon":        "🌐",
+      "description": "Eine Webanwendung"
+    }
+  ]
+}
+```
+
+> **Hinweis:** Windows-Pfade in JSON benötigen doppelte Backslashes: `C:\\Ordner\\Datei.ps1`  
+> Der Einstellungen-Dialog übernimmt das automatisch.
+
+---
+
+## Hilfe-Bibliothek & Änderungsprotokoll
+
+**Hilfe (`src/help/*.md`):** Der Hilfe-Dialog zeigt links die Liste aller Markdown-Dateien aus `src/help/`, rechts die ausgewählte Datei. Über die Sidebar-Buttons können Dokumente angelegt, umbenannt oder gelöscht werden. Reihenfolge wird per Dateinamen-Präfix gesteuert (`01_`, `02_`, …). Jede Datei lässt sich entweder direkt im Texteditor oder im App-Dialog (**Bearbeiten → Speichern**) pflegen.
+
+**Änderungsprotokoll (`src/changes.md`):** Einzeldokument, wird über den Welcome-Pane-Button **Änderungen** geöffnet und ist in der App editierbar.
+
+Unterstützt wird einfaches Markdown (`# Überschrift`, `**fett**`, Listen, `[Link](https://...)`).
+
+---
+
+## Ordnerstruktur
+
+```
+JC-Dashboard/
+├── src/
+│   ├── dashboard.ps1        # Haupt-GUI
+│   ├── tools.json           # Tool-Konfiguration
+│   ├── usage.json           # Historie für "Zuletzt verwendet"
+│   ├── help/                # Hilfe-Bibliothek: beliebig viele .md-Dateien (editierbar in der App)
+│   ├── changes.md           # Aenderungsprotokoll (editierbar in der App)
+│   ├── prefs.json           # Lokale Praeferenzen (Theme etc., nicht in Git)
+│   └── Start-Dashboard.ps1  # Starter
+├── assets/                  # Bilder, Screenshots
+├── docs/
+│   ├── README.md
+│   └── CLAUDE.md            # Regeln für KI-gestützte Weiterentwicklung
+└── .gitignore
+```

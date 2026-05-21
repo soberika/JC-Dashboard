@@ -1,0 +1,316 @@
+﻿{
+    "tools":  [
+                  {
+                      "id":  "z_beispiel_webanwendung",
+                      "name":  "Z_Beispiel Webanwendung",
+                      "type":  "web",
+                      "icon":  "=w=",
+                      "description":  "Eine Beispiel-Webseite",
+                      "tags":  [
+                                   "Info",
+                                   "Demo"
+                               ],
+                      "version":  "1.0.0",
+                      "versionDate":  "2026-01-15",
+                      "doc":  "# Beispiel Webanwendung\n\nDies ist ein **Beispiel-Eintrag** fuer ein Web-Tool.\n\n## Funktionen\n- Oeffnet eine Webseite im Standard-Browser\n- Demonstriert Tags, Version und Markdown-Doku\n\nMehr Infos unter [example.com](https://www.example.com).",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://www.example.com"
+                  },
+                  {
+                      "id":  "z_beispiel_powershell_skript",
+                      "name":  "Z_Beispiel PowerShell-Skript",
+                      "type":  "powershell",
+                      "icon":  "UwU",
+                      "description":  "Ein Beispiel PowerShell-Skript",
+                      "tags":  [
+                                   "Fun",
+                                   "Demo"
+                               ],
+                      "version":  "0.2",
+                      "versionDate":  "2026-03-22",
+                      "doc":  "# Beispiel PowerShell-Skript\n\nStartet ein lokales **.ps1**-Skript via Start-Process.\n\n## Hinweise\n- Pfad in den Einstellungen anpassen\n- Backslashes muessen in JSON doppelt sein (C:\\\\Pfad\\\\Datei.ps1)",
+                      "images":  [
+
+                                 ],
+                      "path":  "C:\\Beispiel\\Skript.ps1"
+                  },
+                  {
+                      "id":  "aufgabenplanung",
+                      "name":  "Aufgabenplanung",
+                      "type":  "windows",
+                      "icon":  "AT",
+                      "description":  "Windows-Aufgabenplanung (Task Scheduler) oeffnen",
+                      "tags":  [
+                                   "System-Tool",
+                                   "Windows"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Aufgabenplanung\n\nOeffnet die Windows-**Aufgabenplanung** (`taskschd.msc`) direkt.\n\n## Wofuer?\n- Geplante Tasks anzeigen, bearbeiten und manuell ausfuehren\n- Status von Skript-Automatisierungen pruefen (z. B. Datenabgleich-Laeufe)\n- Neue geplante Aufgaben anlegen\n\n## Hinweis\nBenoetigte Rechte: lokaler Administrator oder Delegierung ueber Gruppenrichtlinie.",
+                      "images":  [
+
+                                 ],
+                      "path":  "C:\\Windows\\System32\\taskschd.msc"
+                  },
+                  {
+                      "id":  "ad_admin_konsole",
+                      "name":  "AD-Admin-Konsole (JC)",
+                      "type":  "windows",
+                      "icon":  "AD",
+                      "description":  "Active Directory-Verwaltungskonsole fuer die JC-Admin-OU",
+                      "tags":  [
+                                   "System-Tool",
+                                   "Active Directory"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# AD-Admin-Konsole (JC)\n\nOeffnet die vorkonfigurierte **MMC-Snap-In-Datei** `g_JCadmin-OU.msc` fuer die Jobcenter-spezifische Organisationseinheit im Active Directory.\n\n## Lage der Datei\n`\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc`\n\n## Wofuer?\n- Benutzerkonten anlegen, sperren, entsperren\n- Gruppen- und Rechteverwaltung innerhalb der JC-OU\n- Passwort-Resets und Konto-Eigenschaften\n\n## Hinweis\nErfordert AD-Adminrechte. Nur auf zugelassenen Admin-Workstations verwenden.",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc"
+                  },
+                  {
+                      "id":  "open_prosoz_einzelfall",
+                      "name":  "OPEN PROSOZ Einzelfallbearbeitung",
+                      "type":  "program",
+                      "icon":  "OP",
+                      "description":  "Startet OPEN PROSOZ Einzelfallbearbeitung ueber die Startmenue-Verkuepfung",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Fachanwendung"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# OPEN PROSOZ Einzelfallbearbeitung\n\nStartet **OPEN PROSOZ** ueber die installierte Startmenue-Verkuepfung (`.lnk`).\n\n## Pfad der Verkuepfung\n`C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk`\n\n## Hinweise\n- Die Verkuepfung zeigt auf die tatsaechliche Installationsdatei — der Pfad muss bei Updates nicht geaendert werden\n- `.lnk`-Dateien werden von Windows genauso wie `.exe`-Dateien behandelt und direkt gestartet\n- Anmeldung mit dem persoenlichen JC-Nutzeraccount",
+                      "images":  [
+
+                                 ],
+                      "path":  "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk"
+                  },
+                  {
+                      "id":  "prosoz_update_verzeichnis",
+                      "name":  "Prosoz-Update-Verzeichnis",
+                      "type":  "folder",
+                      "icon":  "PU",
+                      "description":  "Oeffnet das Netzwerk-Verzeichnis mit PROSOZ-Installationspaketen",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Updates",
+                                   "System-Tool"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Prosoz-Update-Verzeichnis\n\nOeffnet den freigegebenen Netzwerkordner mit den aktuellen **PROSOZ-Installationspaketen** direkt im Windows Explorer.\n\n## Pfad\n`\\\\172.31.3.32\\open_update\\PROSOZ_Updates`\n\n## Inhalt\n- Installationspakete fuer OPEN PROSOZ-Updates\n- Bereitgestellt vom PROSOZ-Hersteller oder der zentralen IT\n\n## Hinweise\n- Netzwerkverbindung zu `172.31.3.32` notwendig\n- Schreibzugriff nur fuer berechtigte Admins; Lesezugriff fuer alle Systembetreuer",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\172.31.3.32\\open_update\\PROSOZ_Updates"
+                  },
+                  {
+                      "id":  "z_beispiel_hta_anwendung",
+                      "name":  "Z_Beispiel HTA-Anwendung",
+                      "type":  "hta",
+                      "icon":  "OwO",
+                      "description":  "Eine Beispiel HTML-Application",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Info"
+                               ],
+                      "version":  "2.1",
+                      "versionDate":  "2026-05-10",
+                      "doc":  "# Beispiel HTA-Anwendung\n\nHTA-Dateien werden ueber **mshta.exe** geoeffnet.\n\n## Details\n- Wird in eigenem Fenster ausgefuehrt\n- Ideal fuer Legacy-Tools mit HTML+VBScript\n- Kategorie wird in der Detail-Ansicht als **HTA-Anwendung** angezeigt",
+                      "images":  [
+
+                                 ],
+                      "path":  "C:\\Beispiel\\Anwendung.hta"
+                  },
+                  {
+                      "id":  "mittagessen",
+                      "name":  "Mittagessen",
+                      "type":  "web",
+                      "icon":  "🍔",
+                      "description":  "Weil Anrufen und Zurufe auf dem Gang Nerven",
+                      "tags":  [
+                                   "Fun",
+                                   "Github"
+                               ],
+                      "version":  "1.0",
+                      "versionDate":  "2026-01-15",
+                      "doc":  "# To-Do\r\n- Github Upload ist noch notwendig\r\n\r\n## Kommende Ziele\r\n- Corporate Design\r\n- Weitere Essensanbieter\r\n\r\n",
+                      "images":  [
+                                     "C:\\temp\\__\\JC-Dashboard\\assets\\Mittagessen1_0.PNG"
+                                 ],
+                      "url":  "https://mittagessen.dialorsa.workers.dev/"
+                  },
+                  {
+                      "id":  "open_tools",
+                      "name":  "OPEN TOOLS",
+                      "type":  "web",
+                      "icon":  "🧰",
+                      "description":  "",
+                      "tags":  [
+                                   "JC"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "Marcellos",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://vegz/open/index2.php"
+                  },
+                  {
+                      "id":  "systemer_wiki",
+                      "name":  "Systemer-Wiki",
+                      "type":  "web",
+                      "icon":  "📚",
+                      "description":  "",
+                      "tags":  [
+                                   "JC"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://vegz/wiki/doku.php?id=systemer:intern:inhalt"
+                  },
+                  {
+                      "id":  "t_glicher_zahllauf",
+                      "name":  "Täglicher Zahllauf",
+                      "type":  "hta",
+                      "icon":  "💻",
+                      "description":  "Guide mit kompletter Anleitung",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Routine"
+                               ],
+                      "version":  "3.1",
+                      "versionDate":  "",
+                      "doc":  "Test",
+                      "images":  [
+                                     {
+                                         "path":  "C:\\temp\\__\\JC-Dashboard\\assets\\Täglicherzahllauf_1_0_.PNG",
+                                         "caption":  "Oberfläche"
+                                     }
+                                 ],
+                      "path":  "C:\\temp\\__\\zahllauf-automatisierung\\src\\taeglicherZahllauf.hta"
+                  },
+                  {
+                      "id":  "ordnerstruktur_auslesen",
+                      "name":  "Ordnerstruktur Auslesen",
+                      "type":  "powershell",
+                      "icon":  "📁",
+                      "description":  "Skript zum Auslesen einer Ordner-/Dateistruktur im übersichtlichen Format.",
+                      "tags":  [
+                                   "System-Tool",
+                                   "Explorer"
+                               ],
+                      "version":  "1.0",
+                      "versionDate":  "2026-05-20",
+                      "doc":  "Das Ordner Skript liest von einem gewählten Pfad die Struktur mit allen Unterordnern aus und speichert es entweder als Markdown oder steht für Copy\u0026Paste-Zweck im Skript-Log zur Verfügung.\r\n\r\nZusätzliche Optionen sind :\r\n- Dateien mit Anzeigen\r\n- Versteckte Dateien Anzeigen",
+                      "images":  [
+                                     {
+                                         "path":  "C:\\temp\\__\\JC-Dashboard\\assets\\T_Ordnerstruktur_auslesen_.PNG",
+                                         "caption":  "Beispiel"
+                                     }
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Ordnerstruktur\\Get-FolderStructure.ps1"
+                  },
+                  {
+                      "id":  "datenabgleich_auswertung_in_teamordner_schieben",
+                      "name":  "Datenabgleich Auswertung in Teamordner schieben",
+                      "type":  "powershell",
+                      "icon":  "§58",
+                      "description":  "Verschiebt die Auswertungen des Datenabgleiches in die zuständigen Teamordner",
+                      "tags":  [
+                                   "quartalsweise",
+                                   "monatlich",
+                                   "Datenabgleich"
+                               ],
+                      "version":  "1.0",
+                      "versionDate":  "2026-05-20",
+                      "doc":  "# Invoke-DatenabgleichVerteilung.ps1\r\n\r\n## Zweck\r\n\r\nVerteilt die quartalsweise bereitgestellten **Datenabgleich-XLSX-Dateien** (§ 52 SGB II) automatisiert aus dem zentralen Quellpfad in die jeweiligen **Team-Netzwerkordner** auf `\\\\vjc`.\r\n\r\nErsetzt das manuelle Kopieren von ~50 Dateien in 8 verschiedene Teamverzeichnisse.\r\n\r\n---\r\n\r\n## Wann wird das Skript ausgeführt?\r\n\r\n**Einmal pro Quartal** – jeweils nach Bereitstellung der neuen Datenabgleich-Dateien im Quellverzeichnis.  \r\nDas Skript ermittelt automatisch das **vorherige Quartal** (aktuelles Quartal − 1) und fragt zur Sicherheit nach.\r\n\r\n---\r\n\r\n## Was macht das Skript – Schritt für Schritt?\r\n\r\n| Schritt | Aktion |\r\n|---------|--------|\r\n| 1 | Quartal und Jahr automatisch ermitteln (z. B. Mai 2026 → Q1 2026) |\r\n| 2 | Rückfrage: Ist Jahr/Quartal korrekt? Manuelle Korrektur möglich |\r\n| 3 | Quelldateien im Pfad `\\JJJJ\\QN\\` einlesen (`JJJJ_QN_XXXX.xlsx`) |\r\n| 4 | Zuordnung der Dateien zu Teams anhand der ersten zwei Ziffern der Kennziffer |\r\n| 5 | **Vorschau** des Kopierplans, gruppiert nach Zielordner, mit Hinweis auf bereits vorhandene Dateien |\r\n| 6 | Bestätigung abwarten – erst dann werden Dateien angefasst |\r\n| 7 | Zielordner ggf. automatisch anlegen und Dateien kopieren |\r\n| 8 | Zusammenfassung: Erfolge, Fehler, nicht zugeordnete Dateien |\r\n\r\n---\r\n\r\n## Teamzuordnung (Kennziffer → Zielordner)\r\n\r\n| Präfix | Team | Zielpfad |\r\n|--------|------|----------|\r\n| `11__` | Team 1 | `\\\\vjc\\GB2_Team_1\\_alle\\Datenabgleich\\` |\r\n| `22__` | Team 2 | `\\\\vjc\\GB2_Team_2\\_alle\\Datenabgleich\\` |\r\n| `13__` | Team 3 | `\\\\vjc\\GB2_Team_3\\_alle\\Datenabgleich\\` |\r\n| `24__` | Team 4 | `\\\\vjc\\GB2_Team_4\\_Alle\\Datenabgleich § 52 SGB II\\` |\r\n| `36__` | Team 6 | `\\\\vjc\\GB2_Team_6\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `38__` | Team 8 | `\\\\vjc\\GB2_Team_8\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `49__` | Team 9 | `\\\\vjc\\GB2_Team_9\\_alle\\Datenabgleich § 52 SGB II\\` |\r\n| `40__` | Team 10 | `\\\\vjc\\GB2_Team_10\\2_SB\\SB_Listen\\Datenabgleich § 52 SGB II\\` |\r\n\r\nDie Dateien werden jeweils in einen Unterordner `\\JJJJ\\QN\\` im Zielverzeichnis kopiert (wird automatisch erstellt).\r\n\r\n---\r\n\r\n## Voraussetzungen\r\n\r\n- PowerShell 5.1 (Desktop Edition)\r\n- Lesezugriff auf den Quellpfad\r\n- Schreibzugriff auf alle Team-Zielordner unter `\\\\vjc\\`\r\n- Dateibenennung muss dem Schema `JJJJ_QN_XXXX.xlsx` entsprechen\r\n\r\n---\r\n\r\n## Konfiguration\r\n\r\nAm Anfang des Skripts befindet sich der einzige anzupassende Parameter:\r\n\r\n```powershell\r\n$QuellBasisPfad = \u0027\\\\vjc\\Freigabe\\Datenabgleich\u0027   # Wurzelpfad mit JJJJ\\QN\\-Struktur\r\n```\r\n\r\nNeue Teams oder geänderte Zielpfade werden in der `$Teamzuordnung`-Hashtable gepflegt.\r\n\r\n---\r\n\r\n## Speicherort\r\n\r\n```\r\n\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Auswertung Datenabgleich verschieben\\\r\n```\r\n\r\n---\r\n\r\n*Erstellt: Mai 2026 | Zuständig: GB1 Systembetreuung*",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Auswertung Datenabgleich verschieben\\Invoke-DatenabgleichVerteilung.ps1"
+                  },
+                  {
+                      "id":  "pr_flauftermine_erstellen",
+                      "name":  "Prüflauftermine erstellen",
+                      "type":  "powershell",
+                      "icon":  "📅",
+                      "description":  "Erstelle Word-Dokument für die Prüflauftermine.",
+                      "tags":  [
+                                   "Jobcenter",
+                                   "Zahllauf"
+                               ],
+                      "version":  "1.0",
+                      "versionDate":  "2026-05-20",
+                      "doc":  "\r\nErstellt die monatliche Datei termine_MM_YY.docx mit allen Zahllauf-Terminen.\r\n\r\nPfad der Prüflauftermine: \r\n**\\\\VJC\\Allgemein\\Jobcenter_Intern\\MAinformationen_Statistik_Termine\\Termine_Prüfläufe**\r\n\r\n \r\n# Was du vorher brauchst\r\n \r\n- Zugriff auf den Skript-Ordner im Dashboard\r\n- An welchem Tag findet der **mtl. Prüflauf** statt?\r\n- An welchem Tag findet der **SV-Lauf** statt?\r\n- Was ist der **Stichtag der BA-Statistik**?\r\n \r\n# Schritt für Schritt\r\n \r\n## 1. Skript starten\r\n \r\nRechtsklick auf New-Prueflaufe.ps1 → Mit PowerShell ausführen\r\n \r\n## 2. Monat und Jahr bestätigen\r\n \r\nDas Skript schlägt automatisch den **Folgemonat** vor.\r\nIn den meisten Fällen reicht zweimal Enter.\r\n \r\n## 3. Termin wählen\r\n \r\nDu siehst eine nummerierte Liste aller Dienstage und Donnerstage.\r\nAuch die Randtermine vom Vor- und Folgemonat sind dabei.\r\n \r\n## 4. Sonderläufe eintragen\r\n \r\n**SV-Lauf Vormonat** – fällt er an? Wenn ja, Nummer aus der Liste eingeben.\r\n \r\n**Mtl. Prüflauf** – immer vorhanden, Nummer eingeben.\r\n \r\n**SV-Lauf Folgemonat** – fällt er an? Wenn ja, Nummer eingeben.\r\n \r\nBei den Abschlussfristen reicht jeweils Enter (nächster Werktag wird vorgeschlagen).\r\n \r\n## 5. Grauer Highlight (optional)\r\n \r\nSoll ein wöchtl. Prüflauf grau hinterlegt werden? Nummer eingeben oder Enter für keinen.\r\n \r\n## 6. BA-Statistik Stichtag\r\n \r\nStandard ist der 8. des Monats. Bei Abweichung eigenes Datum eingeben: TT.MM.JJJJ\r\n \r\n## 7. Speicherpfad bestätigen\r\n \r\nEnter speichert direkt auf den Netzwerkpfad unter:\r\n\\\\VJC\\Allgemein\\Jobcenter_Intern\\MAinformationen_Statistik_Termine\\Termine_Prüfläufe\r\n \r\n---\r\n \r\n# Dateiname\r\n \r\ntermine_06_26.docx = Juni 2026\r\ntermine_07_26.docx = Juli 2026\r\ntermine_01_27.docx = Januar 2027\r\n \r\n---\r\n \r\n# Häufige Probleme\r\n \r\n**Skript startet nicht**\r\nRechtsklick → Mit PowerShell ausführen → Sicherheitsabfrage mit J bestätigen\r\n \r\n**Vorlage nicht gefunden**\r\nDie Datei Prueflaufe_Vorlage.docx muss im selben Ordner liegen wie das Skript.\r\n \r\n**Pfad nicht erreichbar**\r\nNetzwerk prüfen. Mit n + Enter landet die Datei im Skriptordner und kann später verschoben werden.\r\n \r\n**Datei sieht falsch aus**\r\nScreenshot machen und an die Systembetreuung weitergeben.\r\n \r\n---\r\n \r\n# Tipps\r\n \r\nDatum-Format: TT.MM.JJJJ (z.B. 06.06.2026 oder auch 6.6.26)\r\n \r\nBei fast allen Fragen sind sinnvolle Standardwerte hinterlegt – Enter reicht meistens.\r\n \r\nSkript kann mehrfach gestartet werden. Bei einer vorhandenen Datei wird gefragt ob überschrieben werden soll.",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Monatliche Prüfläufe\\New-Prueflaeufe.ps1"
+                  },
+                  {
+                      "id":  "esolution_portal",
+                      "name":  "eSolution Portal",
+                      "type":  "web",
+                      "icon":  "§58",
+                      "description":  "Öffnen der eSolution Website",
+                      "tags":  [
+                                   "Datenabgleich",
+                                   "monatlich",
+                                   "quatarlsweise"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Datenabgleich - Anmeldung am DRV-System \r\n\r\nLink: [eSolution](https://dsrv.eservice-drv.de/DSRVBoxWeb/)\r\n\r\nDas Browserzertifikat \"Landkreis Meißen\" oder das persönliche Zertifikat nutzen.\r\n\r\nAufbau für Benutzername: G00055xx (siehe eigene Accountdaten)\r\n\r\nOrdner mit gespeicherten Zertifikaten: [Pfad](\\\\vjc\\GB1_Systembetreuung\\Datenabgleich_VDR\\Zertifikat)\r\n\r\n## Verweise\r\n\r\n[Anfragedatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_anfordern)\r\n[Fehlerdatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_rueckmeldung)\r\n[Antwortdatensätze](https://vegz/wiki/doku.php?id=systemer:intern:datenabgleich_grusi_verarbeiten)",
+                      "images":  [
+
+                                 ],
+                      "url":  "https://dsrv.eservice-drv.de/eLogin/loginUserEingabe.html"
+                  },
+                  {
+                      "id":  "profilspeicherplatz_reinigen",
+                      "name":  "Profilspeicherplatz reinigen",
+                      "type":  "powershell",
+                      "icon":  "🗑️",
+                      "description":  "Profilspeicherplatz-Reinigung leicht gemacht!",
+                      "tags":  [
+                                   "Explorer",
+                                   "First-Level-Support"
+                               ],
+                      "version":  "1.0.",
+                      "versionDate":  "2026-03-05",
+                      "doc":  "Folgender Link ist zu Verwenden wenn man bei Mitarbeitern auf dem Bildschirm das Tool ausführen möchte:\r\n**\\\\vjc\\SOZIAL-Portal\\Dateien\\Systembetreuung\\Profilspeicher_optimieren\\_Systemer\\ProfilspeicherSystemer.bat**\r\n\r\n",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\vjc\\SOZIAL-Portal\\Dateien\\Systembetreuung\\Profilspeicher_optimieren\\_Systemer\\ProfilspeicherSystemer.ps1"
+                  },
+                  {
+                      "id":  "remote_support",
+                      "name":  "Remote-Support",
+                      "type":  "powershell",
+                      "icon":  "🕵️",
+                      "description":  "Auf Bildschirm der Mitarbeiter zuschalten",
+                      "tags":  [
+                                   "First-Level-Support"
+                               ],
+                      "version":  "3.0",
+                      "versionDate":  "2026-05-21",
+                      "doc":  "# TSJC Remote Support Tool\r\n \r\nDieses Tool ermoeglicht Support-Mitarbeitern, Benutzersessions auf den Teamservern zu finden und per **Microsoft Remote Assistance (MSRA)** eine Fernhilfe-Verbindung anzubieten.\r\n \r\n## Startmodus waehlen\r\n \r\nBeim Start erscheint folgende Eingabeaufforderung:\r\n \r\n`Eingabe  [ leer = ALLE | f = Nachname | p = PC-Direktverbindung ]`\r\n \r\n- **Leer lassen + Enter** — listet alle aktuell angemeldeten Benutzer auf allen 9 Servern auf.\r\n- **f** — Suche nach Benutzername anhand eines Nachnamens (oder Teils davon).\r\n- **p** — Direkte Verbindung zu einem Client-PC (z.B. PC3397, IGEL0670, LT376).\r\n## Nachnamenssuche (f)\r\n \r\n1. `f` eingeben und Enter druecken.\r\n2. Nachnamen oder Namensteil eingeben (z.B. `baumgart`).\r\n3. Das Tool fragt die interne API ab und zeigt gefundene Benutzernamen an.\r\n4. Bei einem Treffer: mit Enter bestaetigen oder anderen Namen eingeben.\r\n5. Bei mehreren Treffern: Nummer eingeben oder Namen direkt tippen.\r\n## PC-Direktverbindung (p)\r\n \r\n1. `p` eingeben und Enter druecken.\r\n2. PC-Nummer oder Namensteil eingeben (z.B. `3397` oder `LT376`).\r\n3. Das Tool prueft automatisch alle bekannten Praefix-Varianten:\r\n   - `PC3397`\r\n   - `IGEL3397`\r\n   - `LT3397`\r\n4. Erreichbare PCs werden aufgelistet — Nummer auswaehlen.\r\n5. Das Tool prueft dann die aktive Session und startet MSRA.\r\n## MSRA starten\r\n \r\nNach einer erfolgreichen Suche (Terminalserver oder PC):\r\n \r\n- Bei **genau einer** aktiven Sitzung: Bestaetigung mit Enter startet MSRA sofort.\r\n- Bei **mehreren** aktiven Sitzungen: Nummer des gewuenschten Servers eingeben.\r\n- Der **Benutzer muss die eingehende Anfrage aktiv annehmen** — MSRA startet auf seiner Seite einen Dialog.\r\n## Bekannte Praefixe (PC-Suche)\r\n \r\n| Praefix | Beispiel    | Geraetetyp          |\r\n|---------|-------------|---------------------|\r\n| PC      | PC3397      | Desktop-PC          |\r\n| IGEL    | IGEL0670    | Thin Client (IGEL)  |\r\n| LT      | LT376       | Laptop              |\r\n \r\n## Statusanzeige (Terminalserver-Suche)\r\n \r\n| Status              | Bedeutung                                      |\r\n|---------------------|------------------------------------------------|\r\n| Angemeldet          | Benutzer hat aktive Session auf diesem Server  |\r\n| Nicht angemeldet    | Kein Treffer fuer diesen Benutzer              |\r\n| Nicht erreichbar    | Server antwortet nicht (RPC-Fehler o.ae.)      |\r\n| Timeout             | Server hat nicht innerhalb von 8 Sekunden geantwortet |\r\n \r\n## Logging\r\n \r\nJede Sitzung wird automatisch protokolliert unter:\r\n \r\n`%APPDATA%\\TSJC-Support\\Logs\\JJJJ-MM-TT.log`\r\n \r\nEingetragen werden: Suchvorgaenge, gefundene Sessions, gestartete MSRA-Verbindungen und Fehler.\r\n \r\n## Tipps\r\n \r\n- Bei **Encoding-Problemen** in der Konsole (Umlaute als Fragezeichen): PowerShell-Fenster mit UTF-8 starten: `chcp 65001`.\r\n- MSRA benoetigt, dass auf dem Zielrechner ein **Benutzer angemeldet** ist — sonst laeuft die Anfrage ins Leere.\r\n- Den **vollstaendigen PC-Namen** (z.B. `LT376`) kann man bei der PC-Suche auch direkt eingeben, wenn der Ping-Treffer ausbleibt.\r\n- Die Serverliste und Praefix-Liste sind im Skript-Kopf unter `$script:Config` zentral konfigurierbar.\r\n ",
+                      "images":  [
+
+                                 ],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\Taskplaner\\Sicherung_der_Skripte\\Skripte Paul\\_JCDashboard\\Remote-Sitzung\\TSJC-RemoteSupport.ps1"
+                  }
+              ]
+}
