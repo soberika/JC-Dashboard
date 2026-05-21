@@ -20,6 +20,9 @@ $Script:ToolTypeColors = [ordered]@{
     "powershell" = "#1E6DB5"   # Blau
     "web"        = "#16A34A"   # Gruen
     "hta"        = "#F59E0B"   # Orange
+    "windows"    = "#7C3AED"   # Lila  (Windows-Admin-Tools, .msc)
+    "program"    = "#DC2626"   # Rot   (.exe / .lnk)
+    "folder"     = "#0891B2"   # Tuerkis (Ordner per Explorer)
     "ml"         = "#8B5CF6"   # Lila  (Tag-Fallback)
     "jc"         = "#14B8A6"   # Teal  (Tag-Fallback)
     "default"    = "#64748B"   # Grau  (Fallback)
@@ -1082,9 +1085,12 @@ function Add-ToolListItem {
     $nameBlock.TextTrimming = "CharacterEllipsis"
 
     $typeLabel = switch ($Tool.type) {
-        "web"   { "Webanwendung"   }
-        "hta"   { "HTA-Anwendung"  }
-        default { "PowerShell"     }
+        "web"     { "Webanwendung"      }
+        "hta"     { "HTA-Anwendung"     }
+        "windows" { "Windows-Anwendung" }
+        "program" { "Programm"          }
+        "folder"  { "Ordner"            }
+        default   { "PowerShell"        }
     }
     $typeBlock            = New-Object System.Windows.Controls.TextBlock
     $typeBlock.Text       = $typeLabel
@@ -1227,9 +1233,12 @@ function Show-ToolDetails {
     # Meta-Chips
     $Script:detailMeta.Children.Clear()
     $catText = switch ($Tool.type) {
-        "web"   { "Webanwendung"  }
-        "hta"   { "HTA-Anwendung" }
-        default { "PowerShell"    }
+        "web"     { "Webanwendung"      }
+        "hta"     { "HTA-Anwendung"     }
+        "windows" { "Windows-Anwendung" }
+        "program" { "Programm"          }
+        "folder"  { "Ordner"            }
+        default   { "PowerShell"        }
     }
     $Script:detailMeta.Children.Add((New-MetaChip -Text $catText -BgHex (Get-ToolBadgeColor -Tool $Tool))) | Out-Null
 
@@ -1370,6 +1379,13 @@ function Start-Tool {
     try {
         if ($Tool.type -eq "web") {
             Start-Process $Tool.url
+            Update-LastUsed -ToolId $Tool.id
+            if ($Script:CurrentMode -eq "recent") { Build-ToolList -Mode "recent" }
+            return
+        }
+        if ($Tool.type -eq "folder") {
+            $folderPath = $Tool.path
+            Start-Process "explorer.exe" -ArgumentList $folderPath
             Update-LastUsed -ToolId $Tool.id
             if ($Script:CurrentMode -eq "recent") { Build-ToolList -Mode "recent" }
             return
@@ -2190,6 +2206,9 @@ function Show-SettingsDialog {
                     <ComboBoxItem Content="powershell"/>
                     <ComboBoxItem Content="hta"/>
                     <ComboBoxItem Content="web"/>
+                    <ComboBoxItem Content="windows"/>
+                    <ComboBoxItem Content="program"/>
+                    <ComboBoxItem Content="folder"/>
                 </ComboBox>
 
                 <TextBlock x:Name="lblPath" Style="{StaticResource Lbl}"
@@ -2374,11 +2393,7 @@ function Show-SettingsDialog {
 
     # Live-Vorschau-Badge im Einstellungen-Dialog aktualisieren.
     function S-UpdateIconPreview {
-        $typeKey = switch ($sCmbTyp.SelectedIndex) {
-            1       { "hta" }
-            2       { "web" }
-            default { "powershell" }
-        }
+        $typeKey = if ($sCmbTyp.SelectedItem) { [string]$sCmbTyp.SelectedItem.Content } else { "powershell" }
         $previewTool = [PSCustomObject]@{
             icon     = $sTxtIco.Text
             iconPath = $sTxtIcoPath.Text
@@ -2388,12 +2403,16 @@ function Show-SettingsDialog {
     }
 
     function S-UpdatePathLabel {
-        $sLblPath.Text = switch ($sCmbTyp.SelectedIndex) {
-            1       { "Pfad zur .hta" }
-            2       { "URL"           }
-            default { "Pfad zur .ps1" }
+        $t = if ($sCmbTyp.SelectedItem) { [string]$sCmbTyp.SelectedItem.Content } else { "powershell" }
+        $sLblPath.Text = switch ($t) {
+            "hta"     { "Pfad zur .hta"          }
+            "web"     { "URL"                    }
+            "windows" { "Pfad zur .msc / .exe"   }
+            "program" { "Pfad zur .exe / .lnk"   }
+            "folder"  { "Pfad zum Ordner"         }
+            default   { "Pfad zur .ps1"           }
         }
-        $sBtnBrw.Visibility = if ($sCmbTyp.SelectedIndex -eq 2) { "Collapsed" } else { "Visible" }
+        $sBtnBrw.Visibility = if ($t -eq "web" -or $t -eq "folder") { "Collapsed" } else { "Visible" }
     }
 
     function S-ClearForm {
@@ -2442,7 +2461,9 @@ function Show-SettingsDialog {
         S-RefreshImageList
         $sTxtImgCap.Text      = ""
         $sTxtImgCap.IsEnabled = $false
-        $sCmbTyp.SelectedIndex = switch ($t.type) { "hta" { 1 } "web" { 2 } default { 0 } }
+        $typeStr = if ($t.type) { [string]$t.type } else { "powershell" }
+        $sCmbTyp.SelectedItem = ($sCmbTyp.Items | Where-Object { $_.Content -eq $typeStr } | Select-Object -First 1)
+        if (-not $sCmbTyp.SelectedItem) { $sCmbTyp.SelectedIndex = 0 }
         S-UpdatePathLabel
         $sTxtPth.Text = if ($t.type -eq "web") { $t.url } else { $t.path }
     }
@@ -2472,9 +2493,12 @@ function Show-SettingsDialog {
 
     $sBtnBrw.Add_Click({
         $ofd = New-Object System.Windows.Forms.OpenFileDialog
-        $ofd.Filter = switch ($sCmbTyp.SelectedIndex) {
-            1       { "HTA-Dateien (*.hta)|*.hta|Alle Dateien (*.*)|*.*" }
-            default { "PowerShell-Skripte (*.ps1;*.hta)|*.ps1;*.hta|Alle Dateien (*.*)|*.*" }
+        $bt = if ($sCmbTyp.SelectedItem) { [string]$sCmbTyp.SelectedItem.Content } else { "powershell" }
+        $ofd.Filter = switch ($bt) {
+            "hta"     { "HTA-Dateien (*.hta)|*.hta|Alle Dateien (*.*)|*.*" }
+            "windows" { "MMC-Snap-Ins (*.msc)|*.msc|Ausfuehrbare Dateien (*.exe)|*.exe|Alle Dateien (*.*)|*.*" }
+            "program" { "Ausfuehrbare Dateien (*.exe)|*.exe|Verkuepfungen (*.lnk)|*.lnk|Alle Dateien (*.*)|*.*" }
+            default   { "PowerShell-Skripte (*.ps1)|*.ps1|Alle Dateien (*.*)|*.*" }
         }
         $ofd.Title = "Datei auswaehlen"
         if ($ofd.ShowDialog() -eq "OK") { $sTxtPth.Text = $ofd.FileName }
@@ -2559,7 +2583,7 @@ function Show-SettingsDialog {
                 "Bitte einen Namen eingeben.", "Fehler") | Out-Null
             return
         }
-        $type = switch ($sCmbTyp.SelectedIndex) { 1 { "hta" } 2 { "web" } default { "powershell" } }
+        $type = if ($sCmbTyp.SelectedItem) { [string]$sCmbTyp.SelectedItem.Content } else { "powershell" }
         $id   = ($sTxtNam.Text.ToLower() -replace '[^a-z0-9]', '_')
 
         $rawTags = ($sTxtTags.Text -split ',') |

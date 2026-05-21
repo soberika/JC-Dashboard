@@ -37,6 +37,71 @@
                       "path":  "C:\\Beispiel\\Skript.ps1"
                   },
                   {
+                      "id":  "aufgabenplanung",
+                      "name":  "Aufgabenplanung",
+                      "type":  "windows",
+                      "icon":  "AT",
+                      "description":  "Windows-Aufgabenplanung (Task Scheduler) oeffnen",
+                      "tags":  [
+                                   "System-Tool",
+                                   "Windows"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Aufgabenplanung\n\nOeffnet die Windows-**Aufgabenplanung** (`taskschd.msc`) direkt.\n\n## Wofuer?\n- Geplante Tasks anzeigen, bearbeiten und manuell ausfuehren\n- Status von Skript-Automatisierungen pruefen (z. B. Datenabgleich-Laeufe)\n- Neue geplante Aufgaben anlegen\n\n## Hinweis\nBenoetigte Rechte: lokaler Administrator oder Delegierung ueber Gruppenrichtlinie.",
+                      "images":  [],
+                      "path":  "C:\\Windows\\System32\\taskschd.msc"
+                  },
+                  {
+                      "id":  "ad_admin_konsole",
+                      "name":  "AD-Admin-Konsole (JC)",
+                      "type":  "windows",
+                      "icon":  "AD",
+                      "description":  "Active Directory-Verwaltungskonsole fuer die JC-Admin-OU",
+                      "tags":  [
+                                   "System-Tool",
+                                   "Active Directory"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# AD-Admin-Konsole (JC)\n\nOeffnet die vorkonfigurierte **MMC-Snap-In-Datei** `g_JCadmin-OU.msc` fuer die Jobcenter-spezifische Organisationseinheit im Active Directory.\n\n## Lage der Datei\n`\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc`\n\n## Wofuer?\n- Benutzerkonten anlegen, sperren, entsperren\n- Gruppen- und Rechteverwaltung innerhalb der JC-OU\n- Passwort-Resets und Konto-Eigenschaften\n\n## Hinweis\nErfordert AD-Adminrechte. Nur auf zugelassenen Admin-Workstations verwenden.",
+                      "images":  [],
+                      "path":  "\\\\VJC\\GB1_Systembetreuung\\_alle\\Admin_Konsole\\g_JCadmin-OU.msc"
+                  },
+                  {
+                      "id":  "open_prosoz_einzelfall",
+                      "name":  "OPEN PROSOZ Einzelfallbearbeitung",
+                      "type":  "program",
+                      "icon":  "OP",
+                      "description":  "Startet OPEN PROSOZ Einzelfallbearbeitung ueber die Startmenue-Verkuepfung",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Fachanwendung"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# OPEN PROSOZ Einzelfallbearbeitung\n\nStartet **OPEN PROSOZ** ueber die installierte Startmenue-Verkuepfung (`.lnk`).\n\n## Pfad der Verkuepfung\n`C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk`\n\n## Hinweise\n- Die Verkuepfung zeigt auf die tatsaechliche Installationsdatei — der Pfad muss bei Updates nicht geaendert werden\n- `.lnk`-Dateien werden von Windows genauso wie `.exe`-Dateien behandelt und direkt gestartet\n- Anmeldung mit dem persoenlichen JC-Nutzeraccount",
+                      "images":  [],
+                      "path":  "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\PROSOZ Herten GmbH\\OPEN PROSOZ\\OPEN PROSOZ Einzelfallbearbeitung.lnk"
+                  },
+                  {
+                      "id":  "prosoz_update_verzeichnis",
+                      "name":  "Prosoz-Update-Verzeichnis",
+                      "type":  "folder",
+                      "icon":  "PU",
+                      "description":  "Oeffnet das Netzwerk-Verzeichnis mit PROSOZ-Installationspaketen",
+                      "tags":  [
+                                   "OPEN/Prosoz",
+                                   "Updates",
+                                   "System-Tool"
+                               ],
+                      "version":  "",
+                      "versionDate":  "",
+                      "doc":  "# Prosoz-Update-Verzeichnis\n\nOeffnet den freigegebenen Netzwerkordner mit den aktuellen **PROSOZ-Installationspaketen** direkt im Windows Explorer.\n\n## Pfad\n`\\\\172.31.3.32\\open_update\\PROSOZ_Updates`\n\n## Inhalt\n- Installationspakete fuer OPEN PROSOZ-Updates\n- Bereitgestellt vom PROSOZ-Hersteller oder der zentralen IT\n\n## Hinweise\n- Netzwerkverbindung zu `172.31.3.32` notwendig\n- Schreibzugriff nur fuer berechtigte Admins; Lesezugriff fuer alle Systembetreuer",
+                      "images":  [],
+                      "path":  "\\\\172.31.3.32\\open_update\\PROSOZ_Updates"
+                  },
+                  {
                       "id":  "z_beispiel_hta_anwendung",
                       "name":  "Z_Beispiel HTA-Anwendung",
                       "type":  "hta",
