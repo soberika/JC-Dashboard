@@ -12,6 +12,8 @@ $Script:HelpDir          = Join-Path $Script:ScriptDir "help"
 $Script:ChangesFile      = Join-Path $Script:ScriptDir "changes.md"
 $Script:PrefsFile        = Join-Path $Script:ScriptDir "prefs.json"
 $Script:CurrentMode      = "recent"
+$Script:ActiveTagFilters = [System.Collections.Generic.HashSet[string]]::new()
+$Script:TagPanelOpen     = $false
 $Script:CurrentTheme     = "light"
 $Script:IgnoreModeChange = $false
 
@@ -566,6 +568,7 @@ function Filter-Tools {
         <Grid Grid.Column="1" Background="#152A3D">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -595,7 +598,24 @@ function Filter-Tools {
                 </Grid>
             </Border>
 
-            <ListBox Grid.Row="1" x:Name="toolList"
+            <!-- Tag-Filter (Modus "all") -->
+            <Border Grid.Row="1" x:Name="tagFilterSection" Visibility="Collapsed"
+                    Background="#0F2030" BorderBrush="#1E3A52" BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <Button x:Name="btnTagToggle" Background="Transparent"
+                            BorderThickness="0" HorizontalContentAlignment="Left"
+                            Padding="16,7" Cursor="Hand">
+                        <TextBlock x:Name="txtTagToggle" Text="&#9656; Tags filtern"
+                                   Foreground="#7C9AB8" FontSize="11" FontWeight="SemiBold"/>
+                    </Button>
+                    <Border x:Name="tagChipBorder" Visibility="Collapsed"
+                            Padding="12,0,12,8">
+                        <WrapPanel x:Name="tagChipPanel" Orientation="Horizontal"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <ListBox Grid.Row="2" x:Name="toolList"
                      Background="Transparent" BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
         </Grid>
@@ -691,6 +711,11 @@ $Script:txtSearch        = $Script:window.FindName("txtSearch")
 $Script:searchBorder     = $Script:window.FindName("searchBorder")
 $Script:col2Header       = $Script:window.FindName("col2Header")
 $Script:col2Title        = $Script:window.FindName("col2Title")
+$Script:tagFilterSection = $Script:window.FindName("tagFilterSection")
+$Script:tagChipBorder    = $Script:window.FindName("tagChipBorder")
+$Script:tagChipPanel     = $Script:window.FindName("tagChipPanel")
+$Script:btnTagToggle     = $Script:window.FindName("btnTagToggle")
+$Script:txtTagToggle     = $Script:window.FindName("txtTagToggle")
 $Script:welcomePanel     = $Script:window.FindName("welcomePanel")
 $Script:detailScroll     = $Script:window.FindName("detailScroll")
 $Script:detailTitle      = $Script:window.FindName("detailTitle")
@@ -1185,6 +1210,76 @@ function Show-ImageLightbox {
 }
 
 # ---------------------------------------------------------------------------
+# Tag-Filter (Col 2)
+# ---------------------------------------------------------------------------
+
+function Build-TagChips {
+    param([array]$AllTools)
+    $Script:tagChipPanel.Children.Clear()
+    $allTags = @($AllTools | ForEach-Object { $_.tags } | Where-Object { $_ } | Sort-Object -Unique)
+    foreach ($tag in $allTags) {
+        $isActive = $Script:ActiveTagFilters.Contains($tag)
+        $btn = New-Object System.Windows.Controls.Button
+        $btn.Content         = $tag
+        $btn.Tag             = $tag
+        $btn.Margin          = New-Object System.Windows.Thickness(0, 0, 4, 4)
+        $btn.Padding         = New-Object System.Windows.Thickness(8, 3, 8, 3)
+        $btn.FontSize        = 11
+        $btn.Cursor          = [System.Windows.Input.Cursors]::Hand
+        $btn.BorderThickness = New-Object System.Windows.Thickness(1)
+        if ($isActive) {
+            $btn.Background  = [System.Windows.Media.SolidColorBrush][System.Windows.Media.ColorConverter]::ConvertFromString("#1E6DB5")
+            $btn.Foreground  = [System.Windows.Media.Brushes]::White
+            $btn.BorderBrush = [System.Windows.Media.SolidColorBrush][System.Windows.Media.ColorConverter]::ConvertFromString("#1E6DB5")
+        } else {
+            $btn.Background  = [System.Windows.Media.Brushes]::Transparent
+            $btn.Foreground  = [System.Windows.Media.SolidColorBrush][System.Windows.Media.ColorConverter]::ConvertFromString("#7C9AB8")
+            $btn.BorderBrush = [System.Windows.Media.SolidColorBrush][System.Windows.Media.ColorConverter]::ConvertFromString("#2A4A65")
+        }
+        $btn.Add_Click({
+            $t = $args[0].Tag
+            if ($Script:ActiveTagFilters.Contains($t)) {
+                $Script:ActiveTagFilters.Remove($t) | Out-Null
+            } else {
+                $Script:ActiveTagFilters.Add($t) | Out-Null
+            }
+            Refresh-ToolListFiltered
+        })
+        $Script:tagChipPanel.Children.Add($btn) | Out-Null
+    }
+}
+
+function Refresh-ToolListFiltered {
+    $Script:toolList.Items.Clear()
+    $loaded = @(Load-Tools | Sort-Object name)
+
+    $q = $Script:txtSearch.Text
+    $tools = if ([string]::IsNullOrWhiteSpace($q)) { $loaded } else {
+        $ql = $q.ToLower()
+        @($loaded | Where-Object {
+            ($_.name        -and $_.name.ToLower().Contains($ql))        -or
+            ($_.doc         -and $_.doc.ToLower().Contains($ql))         -or
+            ($_.description -and $_.description.ToLower().Contains($ql)) -or
+            ($_.tags        -and ($_.tags | Where-Object { $_ -and $_.ToLower().Contains($ql) }))
+        })
+    }
+
+    if ($Script:ActiveTagFilters.Count -gt 0) {
+        $tools = @($tools | Where-Object {
+            $_.tags | Where-Object { $Script:ActiveTagFilters.Contains($_) }
+        })
+    }
+
+    Build-TagChips -AllTools $loaded
+
+    if ($tools.Count -eq 0) {
+        Add-EmptyStateItem "Keine Treffer."
+    } else {
+        foreach ($t in $tools) { Add-ToolListItem $t }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Tool-Liste aufbauen (Col 2)
 # ---------------------------------------------------------------------------
 
@@ -1195,9 +1290,12 @@ function Build-ToolList {
     Show-WelcomePane
 
     if ($Mode -eq "recent") {
-        $Script:col2Header.Visibility  = "Visible"
-        $Script:searchBorder.Visibility = "Collapsed"
-        $Script:col2Title.Text          = "ZULETZT VERWENDET"
+        $Script:col2Header.Visibility       = "Visible"
+        $Script:searchBorder.Visibility     = "Collapsed"
+        $Script:tagFilterSection.Visibility = "Collapsed"
+        $Script:ActiveTagFilters.Clear()
+        $Script:TagPanelOpen                = $false
+        $Script:col2Title.Text = "ZULETZT VERWENDET"
         $tools = Get-RecentTools
         if ($tools.Count -eq 0) {
             Add-EmptyStateItem "Noch kein Tool gestartet."
@@ -1205,16 +1303,13 @@ function Build-ToolList {
             foreach ($t in $tools) { Add-ToolListItem $t }
         }
     } else {
-        $Script:col2Header.Visibility   = "Collapsed"
-        $Script:searchBorder.Visibility = "Visible"
-        $Script:txtSearch.Text          = ""
-        $loaded = Load-Tools
-        $tools  = @($loaded | Sort-Object name)
-        if ($tools.Count -eq 0) {
-            Add-EmptyStateItem "Keine Tools konfiguriert."
-        } else {
-            foreach ($t in $tools) { Add-ToolListItem $t }
-        }
+        $Script:col2Header.Visibility       = "Collapsed"
+        $Script:searchBorder.Visibility     = "Visible"
+        $Script:tagFilterSection.Visibility = "Visible"
+        $Script:tagChipBorder.Visibility    = if ($Script:TagPanelOpen) { "Visible" } else { "Collapsed" }
+        $Script:txtTagToggle.Text           = if ($Script:TagPanelOpen) { "$([char]0x25BE) Tags filtern" } else { "$([char]0x25B8) Tags filtern" }
+        $Script:txtSearch.Text              = ""
+        Refresh-ToolListFiltered
     }
 }
 
@@ -2663,12 +2758,17 @@ $Script:toolList.Add_SelectionChanged({
 
 $Script:txtSearch.Add_TextChanged({
     if ($Script:CurrentMode -ne "all") { return }
-    $filtered = Filter-Tools -Query $Script:txtSearch.Text
-    $Script:toolList.Items.Clear()
-    if ($filtered.Count -eq 0) {
-        Add-EmptyStateItem "Keine Treffer."
+    Refresh-ToolListFiltered
+})
+
+$Script:btnTagToggle.Add_Click({
+    $Script:TagPanelOpen = -not $Script:TagPanelOpen
+    if ($Script:TagPanelOpen) {
+        $Script:tagChipBorder.Visibility = "Visible"
+        $Script:txtTagToggle.Text = "$([char]0x25BE) Tags filtern"
     } else {
-        foreach ($t in $filtered) { Add-ToolListItem $t }
+        $Script:tagChipBorder.Visibility = "Collapsed"
+        $Script:txtTagToggle.Text = "$([char]0x25B8) Tags filtern"
     }
 })
 
